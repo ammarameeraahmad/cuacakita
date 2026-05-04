@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+
+<html lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Profil &amp; Gamification</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed": "#2e1600",
+                        "on-tertiary-container": "#fff6f1",
+                        "secondary-container": "#6fff83",
+                        "secondary": "#006e26",
+                        "on-primary-container": "#f3f7ff",
+                        "inverse-surface": "#2d3135",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary": "#864a00",
+                        "on-tertiary-fixed-variant": "#6c3a00",
+                        "surface-bright": "#f7f9ff",
+                        "on-secondary": "#ffffff",
+                        "on-surface-variant": "#404850",
+                        "tertiary-fixed": "#ffdcc0",
+                        "surface-dim": "#d7dae0",
+                        "tertiary-container": "#a95f00",
+                        "surface-tint": "#006399",
+                        "surface-variant": "#e0e2e8",
+                        "primary": "#005d90",
+                        "on-secondary-container": "#007529",
+                        "background": "#f7f9ff",
+                        "surface": "#f7f9ff",
+                        "primary-container": "#0077b6",
+                        "on-primary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "on-primary-fixed-variant": "#004b74",
+                        "on-error-container": "#93000a",
+                        "on-surface": "#181c20",
+                        "secondary-fixed": "#6fff83",
+                        "surface-container-highest": "#e0e2e8",
+                        "outline-variant": "#bfc7d1",
+                        "inverse-on-surface": "#eef1f6",
+                        "surface-container-low": "#f1f4f9",
+                        "error-container": "#ffdad6",
+                        "surface-container-high": "#e6e8ee",
+                        "tertiary-fixed-dim": "#ffb877",
+                        "inverse-primary": "#94ccff",
+                        "on-secondary-fixed-variant": "#00531a",
+                        "on-tertiary": "#ffffff",
+                        "primary-fixed-dim": "#94ccff",
+                        "on-background": "#181c20",
+                        "outline": "#707881",
+                        "surface-container": "#ebeef4",
+                        "on-error": "#ffffff",
+                        "primary-fixed": "#cde5ff",
+                        "secondary-fixed-dim": "#4fe16a",
+                        "on-secondary-fixed": "#002106",
+                        "on-primary-fixed": "#001d32"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sm": "8px",
+                        "gutter": "16px",
+                        "md": "16px",
+                        "unit": "8px",
+                        "xs": "4px",
+                        "lg": "24px",
+                        "margin": "20px",
+                        "xl": "32px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "headline-xl": ["Plus Jakarta Sans"],
+                        "label-bold": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "body-md": ["18px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "body-lg": ["20px", { "lineHeight": "30px", "fontWeight": "500" }],
+                        "headline-xl": ["40px", { "lineHeight": "48px", "fontWeight": "800" }],
+                        "label-bold": ["16px", { "lineHeight": "20px", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background pb-32">
+<!-- TopAppBar -->
+<header class="flex items-center justify-between px-6 py-4 w-full bg-orange-50 dark:bg-stone-900 border-b-2 border-stone-200 dark:border-stone-800 sticky top-0 z-40">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sky-700 dark:text-sky-400">location_on</span>
+<h1 class="font-plus-jakarta text-xl font-bold tracking-tight text-sky-700 dark:text-sky-400">Desa Sukamaju, 12 Okt</h1>
+</div>
+</header>
+<main class="px-margin pt-lg space-y-xl max-w-2xl mx-auto">
+<!-- Profile Header Section -->
+<section class="flex flex-col items-center text-center space-y-4">
+<div class="relative">
+<img alt="Avatar Pak Budi" class="w-32 h-32 rounded-full object-cover border-4 border-surface-container-lowest shadow-[0_12px_24px_rgba(0,119,182,0.05)]" data-alt="A close-up portrait of a friendly Indonesian farmer wearing a traditional conical hat (caping) and a simple collared shirt. He has a warm, welcoming smile and weathered but kind features. The lighting is soft, warm, natural sunlight typical of an early morning in a village. The background is a gently blurred, sun-drenched green field, perfectly capturing the dependable, tactile, and high-contrast 'Wise Village Elder' aesthetic of the design system." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCp-vFGf92hIIvQObWAVjJUPiicXIHEe3eCIG3RNybpuCfO19aeQC4KbweRbxy37yLm4qWUWCBG4l7LqUpVMQ3pK3VGERk4JGvmhwRUjKCv7qSaR1p234I6os2yi7yfKSp1I7RS5-bM8cUooYo7JdcMwrdsheRLi72K6gIj1wnOfWjthRFheRLeD2JNcJxX4lBH-LnzxfGTwQouPOH2TIV24pCrFIggoiqkC1Yii2ULwF6V4_67zX-E9WvTg5QlMAtA79SU85lY70hn"/>
+<div class="absolute -bottom-2 -right-2 bg-secondary-container text-on-secondary-container rounded-full p-2 shadow-md">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+</div>
+<div>
+<h2 class="font-headline-lg text-headline-lg text-primary">Pak Budi</h2>
+<div class="inline-flex items-center gap-2 bg-surface-container-highest px-4 py-2 rounded-full mt-2">
+<span class="text-xl">🌾</span>
+<span class="font-label-bold text-label-bold text-on-surface-variant">Petani Cuaca Andal</span>
+</div>
+</div>
+<div class="flex items-center gap-1 text-tertiary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined">star</span>
+</div>
+</section>
+<!-- Contribution Stats -->
+<section class="grid grid-cols-2 gap-4">
+<div class="bg-surface-container-lowest p-4 rounded-xl shadow-[0_12px_24px_rgba(0,119,182,0.05)] flex items-center gap-4">
+<div class="text-3xl">📤</div>
+<div>
+<p class="font-headline-lg text-headline-lg text-primary">47</p>
+<p class="font-body-md text-body-md text-on-surface-variant">Total Laporan</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-xl shadow-[0_12px_24px_rgba(0,119,182,0.05)] flex items-center gap-4">
+<div class="text-3xl">✅</div>
+<div>
+<p class="font-headline-lg text-headline-lg text-secondary">43</p>
+<p class="font-body-md text-body-md text-on-surface-variant">Diterima</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-xl shadow-[0_12px_24px_rgba(0,119,182,0.05)] flex items-center gap-4">
+<div class="text-3xl">🎯</div>
+<div>
+<p class="font-headline-lg text-headline-lg text-primary">91%</p>
+<p class="font-body-md text-body-md text-on-surface-variant">Akurasi</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-xl shadow-[0_12px_24px_rgba(0,119,182,0.05)] flex items-center gap-4">
+<div class="text-3xl">🏆</div>
+<div>
+<p class="font-headline-lg text-headline-lg text-tertiary">#12</p>
+<p class="font-body-md text-body-md text-on-surface-variant">Peringkat Desa</p>
+</div>
+</div>
+</section>
+<!-- Achievement Badges -->
+<section class="space-y-4">
+<h3 class="font-body-lg text-body-lg text-primary font-bold">Pencapaian</h3>
+<div class="flex overflow-x-auto pb-4 gap-4 snap-x hide-scrollbar">
+<div class="flex-shrink-0 snap-center bg-surface-container-lowest p-6 rounded-xl border-2 border-primary-container shadow-[0_12px_24px_rgba(0,119,182,0.05)] flex flex-col items-center justify-center min-w-[140px]">
+<span class="text-4xl mb-2">🌧️</span>
+<span class="font-label-bold text-label-bold text-primary text-center">Ahli Hujan</span>
+</div>
+<div class="flex-shrink-0 snap-center bg-surface-container-lowest p-6 rounded-xl border-2 border-surface-container-high shadow-[0_12px_24px_rgba(0,119,182,0.05)] flex flex-col items-center justify-center min-w-[140px]">
+<span class="text-4xl mb-2">☀️</span>
+<span class="font-label-bold text-label-bold text-on-surface text-center">Cuaca Cerah</span>
+</div>
+<div class="flex-shrink-0 snap-center bg-surface-container-lowest p-6 rounded-xl border-2 border-surface-container-high shadow-[0_12px_24px_rgba(0,119,182,0.05)] flex flex-col items-center justify-center min-w-[140px]">
+<span class="text-4xl mb-2">📍</span>
+<span class="font-label-bold text-label-bold text-on-surface text-center">Penjaga Lokal</span>
+</div>
+</div>
+</section>
+<!-- Leaderboard Section -->
+<section class="space-y-4 bg-surface-container-lowest p-6 rounded-2xl shadow-[0_12px_24px_rgba(0,119,182,0.05)]">
+<div class="flex items-center gap-3 border-b border-surface-container pb-4">
+<span class="text-2xl">🏆</span>
+<h3 class="font-body-lg text-body-lg text-primary font-bold">Top Pelapor Minggu Ini - Desamu</h3>
+</div>
+<div class="space-y-2">
+<!-- Rank 1 -->
+<div class="flex items-center gap-4 p-4 bg-tertiary-fixed rounded-xl">
+<span class="font-headline-lg text-headline-lg text-tertiary w-8 text-center">1</span>
+<div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center text-xl overflow-hidden">
+<img alt="User" class="w-full h-full object-cover" data-alt="Portrait of an older Indonesian man with a kind smile, wearing a traditional caping hat. Warm sunlight, rustic village setting. High contrast, friendly aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCiLKGGxXdEEPXWb8SUvnvv8LCdwHq-1iJgvU22-9hjdAZ5QQh0zz4T8mzDClTn0qg-0Mes8xjIp2Ux4ix6bZRKwb4P1Bv26rJJexRiSZjKfgztR4PKKCvNOCgXbN7K-JgtAd18NkoXAzqTQp0Wc8ElL3ikIIGXk2yVicM-6jETzK6RUsYMutb9Nfv5mGwPVW7oJg7DAWvO01IDDsirchqWEkdtGMBi41LE8SHXwAZAlfFKvDK0SfSb87UMGmhkPXhyNBe-Pp7OIV3Y"/>
+</div>
+<div class="flex-1">
+<p class="font-label-bold text-label-bold text-on-surface">Pak Budi</p>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm">47 Laporan</p>
+</div>
+<div class="flex text-tertiary text-sm">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+</div>
+<!-- Rank 2 -->
+<div class="flex items-center gap-4 p-4 bg-surface-container-low rounded-xl">
+<span class="font-headline-lg text-headline-lg text-on-surface-variant w-8 text-center">2</span>
+<div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center text-xl overflow-hidden">
+<img alt="User" class="w-full h-full object-cover" data-alt="Portrait of a middle-aged Indonesian woman in a village setting, wearing a simple headscarf. Warm natural lighting, approachable expression." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAWm3WZOqi9YsK8chlk1bySgEIyDHa0Bb5sEyTVgTRwqf-mHqZWEeqrIl8P1L2lSByVLTBBewEM6sZ98lK7M7rh7j7KRnI5tyTlWf8kp1qSLjgc-OnWah4QWYmekMuxzwv4krzOYM36gwdD532ASFDCzpZtQup5mrQkg_6vXP7GAb0CetRGpNLsEGGd8Vjs1fVIJ0CVXwupgDM7l8SyEmHHvsBepM_5BLMlC_8XRw-2Fi3G_SVLVv0k-DHcuBhU5x4ScYHUjDhvNrJL"/>
+</div>
+<div class="flex-1">
+<p class="font-label-bold text-label-bold text-on-surface">Bu Siti</p>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm">42 Laporan</p>
+</div>
+</div>
+<!-- Rank 3 -->
+<div class="flex items-center gap-4 p-4 bg-surface-container-low rounded-xl">
+<span class="font-headline-lg text-headline-lg text-on-surface-variant w-8 text-center">3</span>
+<div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center text-xl overflow-hidden">
+<img alt="User" class="w-full h-full object-cover" data-alt="Portrait of a young Indonesian farmer, looking confident and reliable. Bright outdoor lighting, rural background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDUeIQmNx6x_ujc0Z-VTnM7uXeCBN8lZ9hf0Phmg2Xrt4FRQCn7JF8avlHLg0yir4q9ggq7JK4TRI--YPE83v-_YKGoOh5TPi_aGdAsJBRcBSldXhkaLmeFmriCXLSVEYw_Qb1y7CXBGUJOq_a7HJisBUtzAlsxQzg5yO2DdGVPSuq5tMcaqzNWt6kTLeQWbihmVgtiCvN946DMOHo1uKQ3HmDDzYMAYgVxniahHq3J89_UkhPEvqDrhEHc9yWTGS5IdOcimTkX0ewe"/>
+</div>
+<div class="flex-1">
+<p class="font-label-bold text-label-bold text-on-surface">Mas Agus</p>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm">38 Laporan</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pt-3 pb-6 bg-white dark:bg-stone-950 z-50 rounded-t-[32px] border-t-4 border-sky-100 dark:border-sky-900/30 shadow-[0_-8px_24px_rgba(0,119,182,0.08)]">
+<div class="flex flex-col items-center justify-center text-stone-500 dark:text-stone-400 px-4 py-2 min-h-[56px] hover:bg-sky-50 dark:hover:bg-stone-800 active:translate-y-1 transition-all duration-200 cursor-pointer">
+<span class="material-symbols-outlined mb-1">home</span>
+<span class="font-plus-jakarta text-[12px] font-bold">Beranda</span>
+</div>
+<div class="flex flex-col items-center justify-center text-stone-500 dark:text-stone-400 px-4 py-2 min-h-[56px] hover:bg-sky-50 dark:hover:bg-stone-800 active:translate-y-1 transition-all duration-200 cursor-pointer">
+<span class="material-symbols-outlined mb-1">smart_toy</span>
+<span class="font-plus-jakarta text-[12px] font-bold">Tanya AI</span>
+</div>
+<div class="flex flex-col items-center justify-center text-stone-500 dark:text-stone-400 px-4 py-2 min-h-[56px] hover:bg-sky-50 dark:hover:bg-stone-800 active:translate-y-1 transition-all duration-200 cursor-pointer">
+<span class="material-symbols-outlined mb-1">add_location_alt</span>
+<span class="font-plus-jakarta text-[12px] font-bold">Laporan</span>
+</div>
+<div class="flex flex-col items-center justify-center text-stone-500 dark:text-stone-400 px-4 py-2 min-h-[56px] hover:bg-sky-50 dark:hover:bg-stone-800 active:translate-y-1 transition-all duration-200 cursor-pointer">
+<span class="material-symbols-outlined mb-1">analytics</span>
+<span class="font-plus-jakarta text-[12px] font-bold">Data</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-sky-100 dark:bg-sky-900/50 text-sky-800 dark:text-sky-200 rounded-2xl px-4 py-2 min-h-[56px] active:translate-y-1 transition-all duration-200 cursor-pointer">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">person</span>
+<span class="font-plus-jakarta text-[12px] font-bold">Profil</span>
+</div>
+</nav>
+<style>
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</body></html>

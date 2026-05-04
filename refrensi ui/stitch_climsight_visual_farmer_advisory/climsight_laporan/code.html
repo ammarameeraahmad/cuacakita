@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+
+<html lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Laporkan Cuaca Sekarang</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed": "#2e1600",
+                        "on-tertiary-container": "#fff6f1",
+                        "secondary-container": "#6fff83",
+                        "secondary": "#006e26",
+                        "on-primary-container": "#f3f7ff",
+                        "inverse-surface": "#2d3135",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary": "#864a00",
+                        "on-tertiary-fixed-variant": "#6c3a00",
+                        "surface-bright": "#f7f9ff",
+                        "on-secondary": "#ffffff",
+                        "on-surface-variant": "#404850",
+                        "tertiary-fixed": "#ffdcc0",
+                        "surface-dim": "#d7dae0",
+                        "tertiary-container": "#a95f00",
+                        "surface-tint": "#006399",
+                        "surface-variant": "#e0e2e8",
+                        "primary": "#005d90",
+                        "on-secondary-container": "#007529",
+                        "background": "#f7f9ff",
+                        "surface": "#f7f9ff",
+                        "primary-container": "#0077b6",
+                        "on-primary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "on-primary-fixed-variant": "#004b74",
+                        "on-error-container": "#93000a",
+                        "on-surface": "#181c20",
+                        "secondary-fixed": "#6fff83",
+                        "surface-container-highest": "#e0e2e8",
+                        "outline-variant": "#bfc7d1",
+                        "inverse-on-surface": "#eef1f6",
+                        "surface-container-low": "#f1f4f9",
+                        "error-container": "#ffdad6",
+                        "surface-container-high": "#e6e8ee",
+                        "tertiary-fixed-dim": "#ffb877",
+                        "inverse-primary": "#94ccff",
+                        "on-secondary-fixed-variant": "#00531a",
+                        "on-tertiary": "#ffffff",
+                        "primary-fixed-dim": "#94ccff",
+                        "on-background": "#181c20",
+                        "outline": "#707881",
+                        "surface-container": "#ebeef4",
+                        "on-error": "#ffffff",
+                        "primary-fixed": "#cde5ff",
+                        "secondary-fixed-dim": "#4fe16a",
+                        "on-secondary-fixed": "#002106",
+                        "on-primary-fixed": "#001d32"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sm": "8px",
+                        "gutter": "16px",
+                        "md": "16px",
+                        "unit": "8px",
+                        "xs": "4px",
+                        "lg": "24px",
+                        "margin": "20px",
+                        "xl": "32px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "headline-xl": ["Plus Jakarta Sans"],
+                        "label-bold": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "body-md": ["18px", {"lineHeight": "28px", "fontWeight": "500"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                        "body-lg": ["20px", {"lineHeight": "30px", "fontWeight": "500"}],
+                        "headline-xl": ["40px", {"lineHeight": "48px", "fontWeight": "800"}],
+                        "label-bold": ["16px", {"lineHeight": "20px", "fontWeight": "700"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: theme('colors.background');
+            color: theme('colors.on-background');
+            padding-bottom: 100px; /* Space for bottom nav */
+        }
+        .soft-shadow {
+            box-shadow: 0px 0px 12px 0px rgba(0, 93, 144, 0.05);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body-md text-body-md">
+<!-- Header Section -->
+<header class="px-margin pt-xl pb-gutter">
+<h1 class="font-headline-xl text-headline-xl text-primary mb-sm">📡 Laporkan Cuaca Sekarang</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Bantu warga lain dengan info cuaca nyata!</p>
+</header>
+<!-- Main Content Canvas -->
+<main class="px-margin flex flex-col gap-lg pb-xl">
+<!-- Step Indicator (Bento-style horizontal scroll) -->
+<div class="flex gap-sm overflow-x-auto pb-sm snap-x">
+<!-- Step 1: Active -->
+<div class="flex-shrink-0 snap-start bg-primary-container text-on-primary-container rounded-full px-md py-sm flex items-center gap-xs font-label-bold text-label-bold soft-shadow">
+<span class="text-xl">📍</span> Lokasi
+            </div>
+<!-- Arrow separator -->
+<div class="flex-shrink-0 flex items-center text-outline">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">arrow_forward</span>
+</div>
+<!-- Step 2: Inactive -->
+<div class="flex-shrink-0 snap-start bg-surface-container-high text-on-surface-variant rounded-full px-md py-sm flex items-center gap-xs font-label-bold text-label-bold">
+<span class="text-xl">🌤️</span> Kondisi
+            </div>
+<!-- Arrow separator -->
+<div class="flex-shrink-0 flex items-center text-outline">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">arrow_forward</span>
+</div>
+<!-- Step 3: Inactive -->
+<div class="flex-shrink-0 snap-start bg-surface-container-high text-on-surface-variant rounded-full px-md py-sm flex items-center gap-xs font-label-bold text-label-bold">
+<span class="text-xl">📤</span> Kirim
+            </div>
+</div>
+<!-- STEP 1: Location Card (Glassmorphism/Soft Card) -->
+<section class="bg-surface-container-lowest rounded-xl p-md soft-shadow border border-surface-variant">
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-gutter">Langkah 1: Lokasi</h2>
+<div class="relative h-48 rounded-lg overflow-hidden mb-gutter bg-surface-container">
+<img alt="Map showing Sleman Yogyakarta" class="w-full h-full object-cover opacity-80 mix-blend-multiply" data-alt="A stylized digital map interface showing the area of Sleman, Yogyakarta. The map uses a soft, light color palette with cream backgrounds, soft green landmasses, and gentle blue water features, fitting a friendly, approachable UI style. A prominent, high-contrast red location pin marks the center. The mood is helpful and clear, illuminated by a clean, even lighting suitable for an interactive screen." data-location="Sleman, Yogyakarta" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZWTjuEwO0i0iC9DaJMzHJPbn6aUn9QfLGpmNf_m0K4i5d_IUPz2IswFxbd5geyXmJXIzXE62ir86S_Etc3N8lq8o5BNEpk_Mbhlg1uv1DOSGBt686KkykOsdFwB1pg8S_7igMFSa6GH-dfxhHfInsp7jRzw1Xalm2wdcCNZGUqWMG3-TqnsRQcoanxQufp6kig0KgkWk2CuUv2MSBZuSgAc9Nh76gN8cR1az43CE-oz2A894_IqgUVG6r0KNgwtYskvklKEx1gxdQ"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest/80 to-transparent flex items-end p-sm">
+<span class="font-label-bold text-label-bold text-on-surface bg-surface-container-lowest/90 px-sm py-xs rounded-full shadow-sm backdrop-blur-sm">
+                        Sleman, Yogyakarta
+                    </span>
+</div>
+</div>
+<button class="w-full min-h-[56px] bg-primary text-on-primary font-label-bold text-label-bold rounded-full flex items-center justify-center gap-sm transition-transform active:scale-95 shadow-sm">
+                Gunakan Lokasi Saya <span class="text-xl">📍</span>
+</button>
+</section>
+<!-- STEP 2: Conditions (Bento Grid) -->
+<section class="bg-surface-container-lowest rounded-xl p-md soft-shadow border border-surface-variant">
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-gutter">Langkah 2: Kondisi</h2>
+<!-- Weather Icons Grid -->
+<div class="grid grid-cols-3 gap-sm mb-lg">
+<!-- Selectable Item -->
+<button class="flex flex-col items-center justify-center p-sm rounded-lg bg-surface-container-high border-2 border-transparent focus:border-primary focus:bg-primary-container focus:text-on-primary-container transition-colors min-h-[80px]">
+<span class="text-3xl mb-xs">☀️</span>
+<span class="font-label-bold text-label-bold text-sm">Cerah</span>
+</button>
+<button class="flex flex-col items-center justify-center p-sm rounded-lg bg-surface-container-high border-2 border-transparent focus:border-primary focus:bg-primary-container focus:text-on-primary-container transition-colors min-h-[80px]">
+<span class="text-3xl mb-xs">🌤️</span>
+<span class="font-label-bold text-label-bold text-sm">Berawan</span>
+</button>
+<button class="flex flex-col items-center justify-center p-sm rounded-lg bg-primary-container text-on-primary-container border-2 border-primary min-h-[80px]">
+<span class="text-3xl mb-xs">🌧️</span>
+<span class="font-label-bold text-label-bold text-sm">Hujan</span>
+</button>
+<button class="flex flex-col items-center justify-center p-sm rounded-lg bg-surface-container-high border-2 border-transparent focus:border-primary focus:bg-primary-container focus:text-on-primary-container transition-colors min-h-[80px]">
+<span class="text-3xl mb-xs">⛈️</span>
+<span class="font-label-bold text-label-bold text-sm">Badai</span>
+</button>
+<button class="flex flex-col items-center justify-center p-sm rounded-lg bg-surface-container-high border-2 border-transparent focus:border-primary focus:bg-primary-container focus:text-on-primary-container transition-colors min-h-[80px]">
+<span class="text-3xl mb-xs">🌫️</span>
+<span class="font-label-bold text-label-bold text-sm">Kabut</span>
+</button>
+<button class="flex flex-col items-center justify-center p-sm rounded-lg bg-surface-container-high border-2 border-transparent focus:border-primary focus:bg-primary-container focus:text-on-primary-container transition-colors min-h-[80px]">
+<span class="text-3xl mb-xs">💨</span>
+<span class="font-label-bold text-label-bold text-sm">Berangin</span>
+</button>
+</div>
+<!-- Rain Intensity Selector (Visible when Rain is selected) -->
+<div class="mb-lg bg-surface-bright p-sm rounded-lg border border-surface-variant">
+<p class="font-label-bold text-label-bold text-on-surface-variant mb-sm">Intensitas Hujan:</p>
+<div class="flex gap-sm">
+<button class="flex-1 py-xs px-sm rounded-full bg-surface-container border border-outline-variant font-body-md text-sm flex justify-center items-center gap-xs">
+                        💧 Gerimis
+                    </button>
+<button class="flex-1 py-xs px-sm rounded-full bg-primary text-on-primary border border-primary font-body-md text-sm flex justify-center items-center gap-xs">
+                        💧💧 Sedang
+                    </button>
+<button class="flex-1 py-xs px-sm rounded-full bg-surface-container border border-outline-variant font-body-md text-sm flex justify-center items-center gap-xs">
+                        💧💧💧 Deras
+                    </button>
+</div>
+</div>
+<!-- Temperature Selector -->
+<div class="bg-surface-bright p-md rounded-lg border border-surface-variant flex items-center justify-between">
+<span class="font-label-bold text-label-bold text-on-surface">Suhu:</span>
+<div class="flex items-center gap-md">
+<button class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-on-surface active:scale-95 transition-transform">
+<span class="material-symbols-outlined font-bold">remove</span>
+</button>
+<span class="font-headline-lg text-headline-lg text-primary w-20 text-center">28°C</span>
+<button class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-on-surface active:scale-95 transition-transform">
+<span class="material-symbols-outlined font-bold">add</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Submit Button -->
+<button class="w-full min-h-[64px] bg-secondary text-on-secondary font-headline-lg text-headline-lg rounded-full flex items-center justify-center gap-sm mt-sm shadow-md transition-transform active:translate-y-1 active:shadow-none">
+<span class="text-2xl">📤</span> KIRIM LAPORAN
+        </button>
+</main>
+<!-- BottomNavBar (Shared Component) -->
+<!-- Active Tab Logic: Laporan (closest match to "Laporkan Cuaca") -->
+<nav class="hidden md:hidden lg:hidden fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pt-3 pb-6 bg-white dark:bg-stone-950 fixed bottom-0 w-full z-50 rounded-t-[32px] border-t-4 border-sky-100 dark:border-sky-900/30 shadow-[0_-8px_24px_rgba(0,119,182,0.08)]" style="display: flex;">
+<!-- Tab 1: Beranda -->
+<a class="flex flex-col items-center justify-center text-stone-500 dark:text-stone-400 px-4 py-2 min-h-[56px] hover:bg-sky-50 dark:hover:bg-stone-800 active:translate-y-1 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">home</span>
+<span class="font-plus-jakarta text-[12px] font-bold mt-1">Beranda</span>
+</a>
+<!-- Tab 2: Tanya AI -->
+<a class="flex flex-col items-center justify-center text-stone-500 dark:text-stone-400 px-4 py-2 min-h-[56px] hover:bg-sky-50 dark:hover:bg-stone-800 active:translate-y-1 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">smart_toy</span>
+<span class="font-plus-jakarta text-[12px] font-bold mt-1">Tanya AI</span>
+</a>
+<!-- Tab 3: Laporan (ACTIVE) -->
+<a class="flex flex-col items-center justify-center bg-sky-100 dark:bg-sky-900/50 text-sky-800 dark:text-sky-200 rounded-2xl px-4 py-2 min-h-[56px] active:translate-y-1 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">add_location_alt</span>
+<span class="font-plus-jakarta text-[12px] font-bold mt-1">Laporan</span>
+</a>
+<!-- Tab 4: Data -->
+<a class="flex flex-col items-center justify-center text-stone-500 dark:text-stone-400 px-4 py-2 min-h-[56px] hover:bg-sky-50 dark:hover:bg-stone-800 active:translate-y-1 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">analytics</span>
+<span class="font-plus-jakarta text-[12px] font-bold mt-1">Data</span>
+</a>
+<!-- Tab 5: Profil -->
+<a class="flex flex-col items-center justify-center text-stone-500 dark:text-stone-400 px-4 py-2 min-h-[56px] hover:bg-sky-50 dark:hover:bg-stone-800 active:translate-y-1 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">person</span>
+<span class="font-plus-jakarta text-[12px] font-bold mt-1">Profil</span>
+</a>
+</nav>
+</body></html>

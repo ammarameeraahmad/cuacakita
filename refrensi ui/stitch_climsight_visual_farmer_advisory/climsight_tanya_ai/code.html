@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+
+<html lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Tanya ClimSight - AI Chat</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-tertiary-fixed": "#2e1600",
+                      "on-tertiary-container": "#fff6f1",
+                      "secondary-container": "#6fff83",
+                      "secondary": "#006e26",
+                      "on-primary-container": "#f3f7ff",
+                      "inverse-surface": "#2d3135",
+                      "surface-container-lowest": "#ffffff",
+                      "tertiary": "#864a00",
+                      "on-tertiary-fixed-variant": "#6c3a00",
+                      "surface-bright": "#f7f9ff",
+                      "on-secondary": "#ffffff",
+                      "on-surface-variant": "#404850",
+                      "tertiary-fixed": "#ffdcc0",
+                      "surface-dim": "#d7dae0",
+                      "tertiary-container": "#a95f00",
+                      "surface-tint": "#006399",
+                      "surface-variant": "#e0e2e8",
+                      "primary": "#005d90",
+                      "on-secondary-container": "#007529",
+                      "background": "#f7f9ff",
+                      "surface": "#f7f9ff",
+                      "primary-container": "#0077b6",
+                      "on-primary": "#ffffff",
+                      "error": "#ba1a1a",
+                      "on-primary-fixed-variant": "#004b74",
+                      "on-error-container": "#93000a",
+                      "on-surface": "#181c20",
+                      "secondary-fixed": "#6fff83",
+                      "surface-container-highest": "#e0e2e8",
+                      "outline-variant": "#bfc7d1",
+                      "inverse-on-surface": "#eef1f6",
+                      "surface-container-low": "#f1f4f9",
+                      "error-container": "#ffdad6",
+                      "surface-container-high": "#e6e8ee",
+                      "tertiary-fixed-dim": "#ffb877",
+                      "inverse-primary": "#94ccff",
+                      "on-secondary-fixed-variant": "#00531a",
+                      "on-tertiary": "#ffffff",
+                      "primary-fixed-dim": "#94ccff",
+                      "on-background": "#181c20",
+                      "outline": "#707881",
+                      "surface-container": "#ebeef4",
+                      "on-error": "#ffffff",
+                      "primary-fixed": "#cde5ff",
+                      "secondary-fixed-dim": "#4fe16a",
+                      "on-secondary-fixed": "#002106",
+                      "on-primary-fixed": "#001d32"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "sm": "8px",
+                      "gutter": "16px",
+                      "md": "16px",
+                      "unit": "8px",
+                      "xs": "4px",
+                      "lg": "24px",
+                      "margin": "20px",
+                      "xl": "32px"
+              },
+              "fontFamily": {
+                      "body-md": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "headline-lg": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "body-lg": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "headline-xl": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "label-bold": [
+                              "Plus Jakarta Sans"
+                      ]
+              },
+              "fontSize": {
+                      "body-md": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-lg": [
+                              "20px",
+                              {
+                                      "lineHeight": "30px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "headline-xl": [
+                              "40px",
+                              {
+                                      "lineHeight": "48px",
+                                      "fontWeight": "800"
+                              }
+                      ],
+                      "label-bold": [
+                              "16px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "700"
+                              }
+                      ]
+              }
+            },
+          }
+        }
+    </script>
+<style>
+        body {
+            background-color: #fff6f1; /* Soft cream background reflecting sun-drenched paper */
+        }
+        .ambient-shadow {
+            box-shadow: 0 0 12px rgba(0, 93, 144, 0.05);
+        }
+        /* Custom scrollbar for horizontal scrolling chips */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body-md text-on-surface bg-on-tertiary-container pb-[100px] flex flex-col min-h-screen">
+<!-- TopAppBar -->
+<header class="flex items-center justify-between px-6 py-4 w-full bg-orange-50 dark:bg-stone-900 docked full-width top-0 border-b-2 border-stone-200 dark:border-stone-800 flat no shadows sticky z-40">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-sky-700 dark:text-sky-400 font-bold" data-icon="robot_2" data-weight="fill" style="font-variation-settings: 'FILL' 1;">robot_2</span>
+<div>
+<h1 class="font-plus-jakarta text-xl font-bold tracking-tight text-sky-800 dark:text-sky-300">Tanya ClimSight</h1>
+<p class="font-body-md text-body-md text-secondary flex items-center gap-xs text-[14px]">
+<span class="w-2 h-2 rounded-full bg-secondary"></span> Online
+                </p>
+</div>
+</div>
+<button class="text-sky-700 dark:text-sky-400 font-bold active:scale-95 transition-transform duration-150 p-2 rounded-full hover:bg-sky-50 dark:hover:bg-stone-800">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow flex flex-col px-margin pt-lg pb-xl gap-lg overflow-y-auto w-full max-w-2xl mx-auto">
+<!-- Question Chips (Horizontal Scroll) -->
+<div class="w-full overflow-x-auto no-scrollbar flex gap-sm pb-2 -mx-margin px-margin snap-x">
+<button class="snap-start flex-shrink-0 bg-surface-container-lowest ambient-shadow rounded-full px-md py-sm flex items-center gap-xs border border-outline-variant active:shadow-none active:translate-y-px transition-all">
+<span class="text-xl">🌧️</span>
+<span class="font-label-bold text-label-bold text-on-surface">Akan hujan hari ini?</span>
+</button>
+<button class="snap-start flex-shrink-0 bg-surface-container-lowest ambient-shadow rounded-full px-md py-sm flex items-center gap-xs border border-outline-variant active:shadow-none active:translate-y-px transition-all">
+<span class="text-xl">🌾</span>
+<span class="font-label-bold text-label-bold text-on-surface">Kapan waktu tanam terbaik?</span>
+</button>
+<button class="snap-start flex-shrink-0 bg-surface-container-lowest ambient-shadow rounded-full px-md py-sm flex items-center gap-xs border border-outline-variant active:shadow-none active:translate-y-px transition-all">
+<span class="text-xl">🌡️</span>
+<span class="font-label-bold text-label-bold text-on-surface">Cuaca minggu ini?</span>
+</button>
+<button class="snap-start flex-shrink-0 bg-surface-container-lowest ambient-shadow rounded-full px-md py-sm flex items-center gap-xs border border-outline-variant active:shadow-none active:translate-y-px transition-all">
+<span class="text-xl">⚠️</span>
+<span class="font-label-bold text-label-bold text-on-surface">Ada peringatan cuaca?</span>
+</button>
+</div>
+<!-- Chat History -->
+<div class="flex flex-col gap-lg w-full">
+<!-- User Bubble -->
+<div class="flex justify-end w-full">
+<div class="bg-primary text-on-primary font-body-md text-body-md rounded-l-xl rounded-tr-xl px-md py-sm max-w-[85%] ambient-shadow">
+                    Akan hujan hari ini?
+                </div>
+</div>
+<!-- AI Bubble -->
+<div class="flex items-start gap-sm w-full">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex-shrink-0 overflow-hidden flex items-center justify-center border-2 border-secondary-container">
+<span class="material-symbols-outlined text-secondary" data-icon="robot_2" data-weight="fill" style="font-variation-settings: 'FILL' 1;">robot_2</span>
+</div>
+<div class="bg-surface-container-lowest border-l-4 border-secondary rounded-r-xl rounded-bl-xl p-md max-w-[85%] ambient-shadow">
+<p class="font-body-md text-body-md text-on-surface">
+                        Hujan 🌧️ akan mulai pukul 14.00 🕐. Pastikan jemuran sudah diangkat ya, Pak!
+                    </p>
+</div>
+</div>
+<!-- Contribution Card (Bento style insert) -->
+<div class="flex justify-start w-full mt-2 pl-12">
+<div class="bg-surface-container-lowest rounded-xl p-md ambient-shadow w-full max-w-[90%] border border-outline-variant flex flex-col gap-md">
+<div class="flex items-center gap-xs text-primary font-label-bold text-label-bold">
+<span class="material-symbols-outlined" data-icon="location_on" data-weight="fill" style="font-variation-settings: 'FILL' 1;">location_on</span>
+<span>Bantu Konfirmasi!</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant text-[14px]">Bagaimana cuaca di lokasi Anda sekarang?</p>
+<div class="grid grid-cols-2 gap-sm">
+<button class="bg-surface flex items-center gap-xs p-sm rounded-lg border border-outline-variant active:bg-secondary-container active:border-secondary transition-colors text-left font-label-bold text-label-bold text-on-surface h-14">
+<span class="text-xl">☀️</span> Cerah
+                        </button>
+<button class="bg-surface flex items-center gap-xs p-sm rounded-lg border border-outline-variant active:bg-secondary-container active:border-secondary transition-colors text-left font-label-bold text-label-bold text-on-surface h-14">
+<span class="text-xl">⛅</span> Mendung
+                        </button>
+<button class="bg-surface flex items-center gap-xs p-sm rounded-lg border border-outline-variant active:bg-secondary-container active:border-secondary transition-colors text-left font-label-bold text-label-bold text-on-surface h-14 ring-2 ring-primary bg-primary-fixed">
+<span class="text-xl">🌧️</span> Hujan
+                        </button>
+<button class="bg-surface flex items-center gap-xs p-sm rounded-lg border border-outline-variant active:bg-secondary-container active:border-secondary transition-colors text-left font-label-bold text-label-bold text-on-surface h-14">
+<span class="text-xl">⛈️</span> Badai
+                        </button>
+</div>
+<div class="pt-2 border-t border-surface-variant mt-2">
+<p class="font-label-bold text-label-bold text-on-surface-variant text-[12px] mb-2">Intensitas Hujan</p>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-outline" data-icon="water_drop">water_drop</span>
+<input class="w-full h-2 bg-surface-variant rounded-lg appearance-none cursor-pointer accent-primary" max="100" min="1" type="range" value="50"/>
+<div class="flex gap-0.5">
+<span class="material-symbols-outlined text-primary" data-icon="water_drop" data-weight="fill" style="font-variation-settings: 'FILL' 1;">water_drop</span>
+<span class="material-symbols-outlined text-primary" data-icon="water_drop" data-weight="fill" style="font-variation-settings: 'FILL' 1;">water_drop</span>
+<span class="material-symbols-outlined text-primary" data-icon="water_drop" data-weight="fill" style="font-variation-settings: 'FILL' 1;">water_drop</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Input Area (Fixed above Bottom Nav) -->
+<div class="fixed bottom-[88px] left-0 w-full px-margin py-md bg-on-tertiary-container z-40 border-t border-surface-variant">
+<div class="max-w-2xl mx-auto flex items-center gap-sm">
+<button class="flex-shrink-0 w-14 h-14 rounded-full bg-surface-container-lowest ambient-shadow flex items-center justify-center border border-outline-variant active:shadow-none active:translate-y-px transition-all">
+<span class="material-symbols-outlined text-primary text-[28px]" data-icon="mic">mic</span>
+</button>
+<div class="flex-grow flex items-center bg-surface-container-lowest ambient-shadow rounded-full border border-outline-variant px-md h-14 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary">
+<input class="w-full bg-transparent border-none focus:ring-0 font-body-md text-body-md text-on-surface placeholder-on-surface-variant" placeholder="Ketik atau tekan mic..." type="text"/>
+<button class="flex-shrink-0 ml-2 w-10 h-10 rounded-full bg-secondary flex items-center justify-center active:scale-95 transition-transform text-on-secondary">
+<span class="material-symbols-outlined" data-icon="arrow_upward" data-weight="fill" style="font-variation-settings: 'FILL' 1;">arrow_upward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pt-3 pb-6 bg-white dark:bg-stone-950 z-50 rounded-t-[32px] border-t-4 border-sky-100 dark:border-sky-900/30 shadow-[0_-8px_24px_rgba(0,119,182,0.08)]">
+<button class="flex flex-col items-center justify-center text-stone-500 dark:text-stone-400 px-4 py-2 min-h-[56px] hover:bg-sky-50 dark:hover:bg-stone-800 active:translate-y-1 transition-all duration-200 group">
+<span class="material-symbols-outlined mb-1 group-hover:text-sky-700" data-icon="home">home</span>
+<span class="font-plus-jakarta text-[12px] font-bold group-hover:text-sky-700">Beranda</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-sky-100 dark:bg-sky-900/50 text-sky-800 dark:text-sky-200 rounded-2xl px-4 py-2 min-h-[56px] hover:bg-sky-50 dark:hover:bg-stone-800 active:translate-y-1 transition-all duration-200 group">
+<span class="material-symbols-outlined mb-1" data-icon="smart_toy" data-weight="fill" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
+<span class="font-plus-jakarta text-[12px] font-bold">Tanya AI</span>
+</button>
+<button class="flex flex-col items-center justify-center text-stone-500 dark:text-stone-400 px-4 py-2 min-h-[56px] hover:bg-sky-50 dark:hover:bg-stone-800 active:translate-y-1 transition-all duration-200 group">
+<span class="material-symbols-outlined mb-1 group-hover:text-sky-700" data-icon="add_location_alt">add_location_alt</span>
+<span class="font-plus-jakarta text-[12px] font-bold group-hover:text-sky-700">Laporan</span>
+</button>
+<button class="flex flex-col items-center justify-center text-stone-500 dark:text-stone-400 px-4 py-2 min-h-[56px] hover:bg-sky-50 dark:hover:bg-stone-800 active:translate-y-1 transition-all duration-200 group">
+<span class="material-symbols-outlined mb-1 group-hover:text-sky-700" data-icon="analytics">analytics</span>
+<span class="font-plus-jakarta text-[12px] font-bold group-hover:text-sky-700">Data</span>
+</button>
+<button class="flex flex-col items-center justify-center text-stone-500 dark:text-stone-400 px-4 py-2 min-h-[56px] hover:bg-sky-50 dark:hover:bg-stone-800 active:translate-y-1 transition-all duration-200 group">
+<span class="material-symbols-outlined mb-1 group-hover:text-sky-700" data-icon="person">person</span>
+<span class="font-plus-jakarta text-[12px] font-bold group-hover:text-sky-700">Profil</span>
+</button>
+</nav>
+</body></html>

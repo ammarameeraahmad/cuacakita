@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+
+<html class="light" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Dashboard Cuaca Desa</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary-fixed": "#2e1600",
+                    "on-tertiary-container": "#fff6f1",
+                    "secondary-container": "#6fff83",
+                    "secondary": "#006e26",
+                    "on-primary-container": "#f3f7ff",
+                    "inverse-surface": "#2d3135",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary": "#864a00",
+                    "on-tertiary-fixed-variant": "#6c3a00",
+                    "surface-bright": "#f7f9ff",
+                    "on-secondary": "#ffffff",
+                    "on-surface-variant": "#404850",
+                    "tertiary-fixed": "#ffdcc0",
+                    "surface-dim": "#d7dae0",
+                    "tertiary-container": "#a95f00",
+                    "surface-tint": "#006399",
+                    "surface-variant": "#e0e2e8",
+                    "primary": "#005d90",
+                    "on-secondary-container": "#007529",
+                    "background": "#f7f9ff",
+                    "surface": "#f7f9ff",
+                    "primary-container": "#0077b6",
+                    "on-primary": "#ffffff",
+                    "error": "#ba1a1a",
+                    "on-primary-fixed-variant": "#004b74",
+                    "on-error-container": "#93000a",
+                    "on-surface": "#181c20",
+                    "secondary-fixed": "#6fff83",
+                    "surface-container-highest": "#e0e2e8",
+                    "outline-variant": "#bfc7d1",
+                    "inverse-on-surface": "#eef1f6",
+                    "surface-container-low": "#f1f4f9",
+                    "error-container": "#ffdad6",
+                    "surface-container-high": "#e6e8ee",
+                    "tertiary-fixed-dim": "#ffb877",
+                    "inverse-primary": "#94ccff",
+                    "on-secondary-fixed-variant": "#00531a",
+                    "on-tertiary": "#ffffff",
+                    "primary-fixed-dim": "#94ccff",
+                    "on-background": "#181c20",
+                    "outline": "#707881",
+                    "surface-container": "#ebeef4",
+                    "on-error": "#ffffff",
+                    "primary-fixed": "#cde5ff",
+                    "secondary-fixed-dim": "#4fe16a",
+                    "on-secondary-fixed": "#002106",
+                    "on-primary-fixed": "#001d32"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "sm": "8px",
+                    "gutter": "16px",
+                    "md": "16px",
+                    "unit": "8px",
+                    "xs": "4px",
+                    "lg": "24px",
+                    "margin": "20px",
+                    "xl": "32px"
+            },
+            "fontFamily": {
+                    "body-md": [
+                            "Plus Jakarta Sans"
+                    ],
+                    "headline-lg": [
+                            "Plus Jakarta Sans"
+                    ],
+                    "body-lg": [
+                            "Plus Jakarta Sans"
+                    ],
+                    "headline-xl": [
+                            "Plus Jakarta Sans"
+                    ],
+                    "label-bold": [
+                            "Plus Jakarta Sans"
+                    ]
+            },
+            "fontSize": {
+                    "body-md": [
+                            "18px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "headline-lg": [
+                            "32px",
+                            {
+                                    "lineHeight": "40px",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "body-lg": [
+                            "20px",
+                            {
+                                    "lineHeight": "30px",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "headline-xl": [
+                            "40px",
+                            {
+                                    "lineHeight": "48px",
+                                    "fontWeight": "800"
+                            }
+                    ],
+                    "label-bold": [
+                            "16px",
+                            {
+                                    "lineHeight": "20px",
+                                    "fontWeight": "700"
+                            }
+                    ]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        body {
+            background-color: #f7f9ff; /* surface */
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            margin-bottom: 90px; /* space for bottom nav */
+        }
+        .soft-shadow {
+            box-shadow: 0px 0px 12px rgba(0, 93, 144, 0.05); /* very soft primary color shadow */
+        }
+        .weather-gradient {
+            background: linear-gradient(135deg, #cde5ff 0%, #94ccff 100%);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="text-on-surface antialiased max-w-[480px] mx-auto min-h-screen relative overflow-x-hidden">
+<!-- TopAppBar from JSON -->
+<header class="docked full-width top-0 border-b-2 flex items-center justify-between px-6 py-4 w-full bg-orange-50 dark:bg-stone-900 border-stone-200 dark:border-stone-800 z-40 sticky">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-sky-700 dark:text-sky-400" style="font-variation-settings: 'FILL' 1;">location_on</span>
+<div class="flex flex-col">
+<span class="font-plus-jakarta text-xl font-bold tracking-tight text-sky-800 dark:text-sky-300">Desa Sukamaju, 12 Okt</span>
+<span class="font-body-md text-body-md text-stone-500 text-sm">Senin, 30 Maret 2024</span>
+</div>
+</div>
+<div class="h-10 w-10 rounded-full bg-surface-container-high flex items-center justify-center overflow-hidden border-2 border-primary-fixed">
+<img alt="Profile" class="w-full h-full object-cover" data-alt="A close-up portrait of a friendly Indonesian farmer with a warm smile, wearing a traditional conical hat (caping) and a simple collared shirt. The lighting is soft and natural, emphasizing approachability and trust. The background is slightly blurred, showing a hint of a bright blue sky, fitting the light-mode UI aesthetic of the rural dashboard app." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDcnxSdsa8JGweMmnfLzdI-pCoKR421D-_B6dhSV684snz5tXDI6Vatrpkkx6Gm6wH1Du3Plc3Gy3yrRrDEi9Wko2CmjJLLFzXY0jJ4clmB_qk6qbxC2lNZPZj84nZSIvbLoSX_ixSWmxRptCLUMUCPbBwgyjETYaLwwbmBQlHNXtbmpdv2-ldLm6EOc1MjKASpB4lOgisw70cSSFEjK_F6XumjRqRToDVyTJF5IzU5azy0co5iOZggeFAMdEjayDAhzNdyN8QWi5QX"/>
+</div>
+</header>
+<main class="p-margin flex flex-col gap-lg pb-xl">
+<!-- Hero Weather Card -->
+<section class="weather-gradient rounded-xl p-md soft-shadow relative overflow-hidden flex flex-col gap-md">
+<!-- Decorative cloud illustration -->
+<div class="absolute -right-4 -top-4 w-32 h-32 opacity-80 pointer-events-none mix-blend-multiply">
+<img alt="Rain clouds" class="w-full h-full object-contain" data-alt="A stylized, flat illustration of gentle rain clouds, drawn with thick strokes and a friendly, approachable aesthetic. The clouds are softly colored in light blues and greys, perfect for a light-mode weather app targeting rural users. The overall mood is calm and informative, avoiding overly realistic or harsh weather depictions." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDfbGWreoY-hatu-UgBc0f7TdwLcViRhLHBTxqjk-fozC0hp53S9uJvYzitNf1h4qHzLDSKgFG1Fi93ZMUgG9lkuzkVsymafTDQY2Kkl95jpoWD1nV2ln3eUcSZ0fxMYgBkO97Z_bwdP27dAQdnAUfT_FSZJwa2WcEKCKEeK46_xfCVnpj32v6-OpiOvPJvvFi_b5Ca9czNI-qiiQmxNb8vEdB1kPyCXnovo4Tahj91hFRDyCFzVyDvzyJwdE2_rI-s_rbcoyjD_OWF"/>
+</div>
+<div class="flex items-center justify-between z-10">
+<div class="flex flex-col">
+<span class="text-[64px] font-extrabold leading-none text-primary-fixed-variant tracking-tight mb-2 text-on-primary-fixed">28°C</span>
+<span class="font-label-bold text-label-bold bg-white/50 px-3 py-1 rounded-full text-on-primary-fixed inline-block w-max">HUJAN RINGAN 🌧️</span>
+</div>
+</div>
+<!-- Status Pills -->
+<div class="flex gap-sm z-10 w-full mt-2">
+<div class="flex-1 bg-white/60 rounded-lg p-2 flex flex-col items-center justify-center text-center">
+<span class="material-symbols-outlined text-primary mb-1">water_drop</span>
+<span class="font-body-md text-xs text-on-surface-variant mb-0.5">Kelembaban</span>
+<span class="font-label-bold text-sm text-on-surface">78%</span>
+</div>
+<div class="flex-1 bg-white/60 rounded-lg p-2 flex flex-col items-center justify-center text-center">
+<span class="material-symbols-outlined text-primary mb-1">air</span>
+<span class="font-body-md text-xs text-on-surface-variant mb-0.5">Angin</span>
+<span class="font-label-bold text-sm text-on-surface">12 km/h</span>
+</div>
+<div class="flex-1 bg-white/60 rounded-lg p-2 flex flex-col items-center justify-center text-center">
+<span class="material-symbols-outlined text-primary mb-1">visibility</span>
+<span class="font-body-md text-xs text-on-surface-variant mb-0.5">Jarak pandang</span>
+<span class="font-label-bold text-sm text-on-surface">8 km</span>
+</div>
+</div>
+</section>
+<!-- Quick Status Strip -->
+<section>
+<h2 class="font-label-bold text-label-bold text-on-surface mb-sm px-2">Prakiraan 5 Hari</h2>
+<div class="flex gap-sm overflow-x-auto pb-4 snap-x no-scrollbar">
+<!-- SEN -->
+<div class="snap-start shrink-0 w-20 bg-surface-container-lowest rounded-lg p-3 flex flex-col items-center justify-center soft-shadow border border-surface-variant">
+<span class="font-label-bold text-sm text-on-surface-variant mb-2">SEN</span>
+<span class="text-2xl mb-2">🌧️</span>
+<div class="flex gap-1 text-xs font-label-bold">
+<span class="text-on-surface">28°</span>
+<span class="text-on-surface-variant">23°</span>
+</div>
+</div>
+<!-- SEL -->
+<div class="snap-start shrink-0 w-20 bg-surface-container-lowest rounded-lg p-3 flex flex-col items-center justify-center soft-shadow border border-surface-variant">
+<span class="font-label-bold text-sm text-on-surface-variant mb-2">SEL</span>
+<span class="text-2xl mb-2">⛅</span>
+<div class="flex gap-1 text-xs font-label-bold">
+<span class="text-on-surface">30°</span>
+<span class="text-on-surface-variant">24°</span>
+</div>
+</div>
+<!-- RAB -->
+<div class="snap-start shrink-0 w-20 bg-surface-container-lowest rounded-lg p-3 flex flex-col items-center justify-center soft-shadow border border-surface-variant">
+<span class="font-label-bold text-sm text-on-surface-variant mb-2">RAB</span>
+<span class="text-2xl mb-2">☀️</span>
+<div class="flex gap-1 text-xs font-label-bold">
+<span class="text-on-surface">32°</span>
+<span class="text-on-surface-variant">25°</span>
+</div>
+</div>
+<!-- KAM -->
+<div class="snap-start shrink-0 w-20 bg-surface-container-lowest rounded-lg p-3 flex flex-col items-center justify-center soft-shadow border border-surface-variant">
+<span class="font-label-bold text-sm text-on-surface-variant mb-2">KAM</span>
+<span class="text-2xl mb-2">⛅</span>
+<div class="flex gap-1 text-xs font-label-bold">
+<span class="text-on-surface">31°</span>
+<span class="text-on-surface-variant">24°</span>
+</div>
+</div>
+<!-- JUM -->
+<div class="snap-start shrink-0 w-20 bg-surface-container-lowest rounded-lg p-3 flex flex-col items-center justify-center soft-shadow border border-surface-variant">
+<span class="font-label-bold text-sm text-on-surface-variant mb-2">JUM</span>
+<span class="text-2xl mb-2">🌧️</span>
+<div class="flex gap-1 text-xs font-label-bold">
+<span class="text-on-surface">29°</span>
+<span class="text-on-surface-variant">23°</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Farming Advisory Section -->
+<section class="bg-secondary-container rounded-xl p-md soft-shadow">
+<div class="flex items-start gap-md mb-md">
+<div class="w-16 h-16 shrink-0 bg-white rounded-full flex items-center justify-center p-2 soft-shadow">
+<img alt="Tractor illustration" class="w-full h-full object-contain" data-alt="A simple, friendly flat illustration of a green tractor, designed with thick strokes and an approachable aesthetic. It sits on a solid white background, intended to serve as a clear, literal icon for farming activities within a rural app interface. The style is non-technical, colorful, and highly legible." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-K1kYe_diebGKNshRYuH1P4EcNbyK1KtO7JqfKwfKfpMennTQ9le2I_DhhxexnuhvrVO-cRbrdYtsrbnl4s47-wT2b5l9mS2_LkoqtyJLe9WtKOE2ODi2KGUNUsy3UaY2pCMUTE7yz9ZP6SMhP5hnPs_khxNL-4Caw9I6jtXBEaeZPvOuPjnsfTmAqDKA4z08ZxJZ5Zx6qe1rHD1zGtWAdalHhB4UXyuv9fyR1kHyfU3sJykaeXYTBq8S52ELflQWVjYxlZVQEt8s"/>
+</div>
+<p class="font-body-md text-body-md text-on-secondary-container font-bold pt-1">
+                    ✅ Hari ini cocok untuk menyiram tanaman pagi hari
+                </p>
+</div>
+<div class="flex flex-col gap-sm">
+<!-- Action Row 1 -->
+<button class="bg-white rounded-full min-h-[56px] px-md flex items-center justify-between soft-shadow active:scale-[0.98] transition-transform">
+<div class="flex items-center gap-sm">
+<span class="text-2xl">🌾</span>
+<span class="font-label-bold text-label-bold text-on-surface">Tanam</span>
+</div>
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">thumb_up</span>
+</button>
+<!-- Action Row 2 -->
+<button class="bg-white rounded-full min-h-[56px] px-md flex items-center justify-between soft-shadow active:scale-[0.98] transition-transform">
+<div class="flex items-center gap-sm">
+<span class="text-2xl">💊</span>
+<span class="font-label-bold text-label-bold text-on-surface">Semprot</span>
+</div>
+<span class="material-symbols-outlined text-error" style="font-variation-settings: 'FILL' 1;">thumb_down</span>
+</button>
+<!-- Action Row 3 -->
+<button class="bg-white rounded-full min-h-[56px] px-md flex items-center justify-between soft-shadow active:scale-[0.98] transition-transform">
+<div class="flex items-center gap-sm">
+<span class="text-2xl">🚜</span>
+<span class="font-label-bold text-label-bold text-on-surface">Bajak</span>
+</div>
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">thumb_up</span>
+</button>
+</div>
+</section>
+<!-- Alert Banner -->
+<section class="bg-error-container rounded-lg p-md flex items-center gap-md border border-error/20 soft-shadow">
+<span class="material-symbols-outlined text-error text-3xl" style="font-variation-settings: 'FILL' 1;">warning</span>
+<span class="font-label-bold text-label-bold text-on-error-container">⚠️ WASPADA: Hujan Deras sore hari</span>
+</section>
+</main>
+<!-- BottomNavBar from JSON -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pt-3 pb-6 bg-white dark:bg-stone-950 z-50 rounded-t-[32px] border-t-4 border-sky-100 dark:border-sky-900/30 shadow-[0_-8px_24px_rgba(0,119,182,0.08)] max-w-[480px] mx-auto right-0">
+<!-- Item 1: Beranda (Active - based on Home/Dashboard intent) -->
+<a class="flex flex-col items-center justify-center bg-sky-100 dark:bg-sky-900/50 text-sky-800 dark:text-sky-200 rounded-2xl px-4 py-2 min-h-[56px] hover:bg-sky-50 dark:hover:bg-stone-800 active:translate-y-1 transition-all duration-200" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-plus-jakarta text-[12px] font-bold">Beranda</span>
+</a>
+<!-- Item 2: Tanya AI (Inactive) -->
+<a class="flex flex-col items-center justify-center text-stone-500 dark:text-stone-400 px-4 py-2 min-h-[56px] hover:bg-sky-50 dark:hover:bg-stone-800 active:translate-y-1 transition-all duration-200" href="#">
+<span class="material-symbols-outlined mb-1">smart_toy</span>
+<span class="font-plus-jakarta text-[12px] font-bold">Tanya AI</span>
+</a>
+<!-- Item 3: Laporan (Inactive) -->
+<a class="flex flex-col items-center justify-center text-stone-500 dark:text-stone-400 px-4 py-2 min-h-[56px] hover:bg-sky-50 dark:hover:bg-stone-800 active:translate-y-1 transition-all duration-200" href="#">
+<span class="material-symbols-outlined mb-1">add_location_alt</span>
+<span class="font-plus-jakarta text-[12px] font-bold">Laporan</span>
+</a>
+<!-- Item 4: Data (Inactive) -->
+<a class="flex flex-col items-center justify-center text-stone-500 dark:text-stone-400 px-4 py-2 min-h-[56px] hover:bg-sky-50 dark:hover:bg-stone-800 active:translate-y-1 transition-all duration-200" href="#">
+<span class="material-symbols-outlined mb-1">analytics</span>
+<span class="font-plus-jakarta text-[12px] font-bold">Data</span>
+</a>
+<!-- Item 5: Profil (Inactive) -->
+<a class="flex flex-col items-center justify-center text-stone-500 dark:text-stone-400 px-4 py-2 min-h-[56px] hover:bg-sky-50 dark:hover:bg-stone-800 active:translate-y-1 transition-all duration-200" href="#">
+<span class="material-symbols-outlined mb-1">person</span>
+<span class="font-plus-jakarta text-[12px] font-bold">Profil</span>
+</a>
+</nav>
+</body></html>

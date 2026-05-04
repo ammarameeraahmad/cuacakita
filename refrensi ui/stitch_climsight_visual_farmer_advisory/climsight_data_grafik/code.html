@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+
+<html lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Desa Sukamaju - Data &amp; Grafik</title>
+<!-- Fonts & Icons -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary-fixed": "#2e1600",
+                    "on-tertiary-container": "#fff6f1",
+                    "secondary-container": "#6fff83",
+                    "secondary": "#006e26",
+                    "on-primary-container": "#f3f7ff",
+                    "inverse-surface": "#2d3135",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary": "#864a00",
+                    "on-tertiary-fixed-variant": "#6c3a00",
+                    "surface-bright": "#f7f9ff",
+                    "on-secondary": "#ffffff",
+                    "on-surface-variant": "#404850",
+                    "tertiary-fixed": "#ffdcc0",
+                    "surface-dim": "#d7dae0",
+                    "tertiary-container": "#a95f00",
+                    "surface-tint": "#006399",
+                    "surface-variant": "#e0e2e8",
+                    "primary": "#005d90",
+                    "on-secondary-container": "#007529",
+                    "background": "#f7f9ff",
+                    "surface": "#f7f9ff",
+                    "primary-container": "#0077b6",
+                    "on-primary": "#ffffff",
+                    "error": "#ba1a1a",
+                    "on-primary-fixed-variant": "#004b74",
+                    "on-error-container": "#93000a",
+                    "on-surface": "#181c20",
+                    "secondary-fixed": "#6fff83",
+                    "surface-container-highest": "#e0e2e8",
+                    "outline-variant": "#bfc7d1",
+                    "inverse-on-surface": "#eef1f6",
+                    "surface-container-low": "#f1f4f9",
+                    "error-container": "#ffdad6",
+                    "surface-container-high": "#e6e8ee",
+                    "tertiary-fixed-dim": "#ffb877",
+                    "inverse-primary": "#94ccff",
+                    "on-secondary-fixed-variant": "#00531a",
+                    "on-tertiary": "#ffffff",
+                    "primary-fixed-dim": "#94ccff",
+                    "on-background": "#181c20",
+                    "outline": "#707881",
+                    "surface-container": "#ebeef4",
+                    "on-error": "#ffffff",
+                    "primary-fixed": "#cde5ff",
+                    "secondary-fixed-dim": "#4fe16a",
+                    "on-secondary-fixed": "#002106",
+                    "on-primary-fixed": "#001d32"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "sm": "8px",
+                    "gutter": "16px",
+                    "md": "16px",
+                    "unit": "8px",
+                    "xs": "4px",
+                    "lg": "24px",
+                    "margin": "20px",
+                    "xl": "32px"
+            },
+            "fontFamily": {
+                    "body-md": ["Plus Jakarta Sans"],
+                    "headline-lg": ["Plus Jakarta Sans"],
+                    "body-lg": ["Plus Jakarta Sans"],
+                    "headline-xl": ["Plus Jakarta Sans"],
+                    "label-bold": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                    "body-md": ["18px", { "lineHeight": "28px", "fontWeight": "500" }],
+                    "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                    "body-lg": ["20px", { "lineHeight": "30px", "fontWeight": "500" }],
+                    "headline-xl": ["40px", { "lineHeight": "48px", "fontWeight": "800" }],
+                    "label-bold": ["16px", { "lineHeight": "20px", "fontWeight": "700" }]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body-md text-body-md pb-[100px]">
+<!-- Top App Bar (From Shared Components JSON) -->
+<header class="bg-orange-50 dark:bg-stone-900 docked full-width top-0 border-b-2 border-stone-200 dark:border-stone-800 flat no shadows flex items-center justify-between px-6 py-4 w-full">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-sky-700 dark:text-sky-400">location_on</span>
+<h1 class="font-plus-jakarta text-xl font-bold tracking-tight text-sky-800 dark:text-sky-300">Desa Sukamaju, 12 Okt</h1>
+</div>
+</header>
+<main class="p-margin flex flex-col gap-xl max-w-2xl mx-auto mt-md">
+<!-- Screen Header -->
+<section>
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-md">📊 Tren Cuaca Lokal</h2>
+<!-- Time Filter Tabs -->
+<div class="flex gap-sm overflow-x-auto pb-xs snap-x">
+<button class="snap-start flex-shrink-0 min-h-[56px] px-lg rounded-full bg-primary text-on-primary font-label-bold text-label-bold flex items-center justify-center shadow-[0_4px_12px_rgba(0,93,144,0.1)]">7 Hari</button>
+<button class="snap-start flex-shrink-0 min-h-[56px] px-lg rounded-full bg-surface-container text-on-surface-variant font-label-bold text-label-bold flex items-center justify-center border border-outline-variant">1 Bulan</button>
+<button class="snap-start flex-shrink-0 min-h-[56px] px-lg rounded-full bg-surface-container text-on-surface-variant font-label-bold text-label-bold flex items-center justify-center border border-outline-variant">1 Tahun</button>
+</div>
+</section>
+<!-- Temperature Chart -->
+<section class="bg-surface-container-lowest rounded-[24px] p-margin shadow-[0_4px_24px_rgba(0,0,0,0.04)] border border-surface-variant relative overflow-hidden">
+<div class="flex justify-between items-center mb-lg">
+<h3 class="font-body-lg text-body-lg text-on-surface">Suhu Harian</h3>
+<span class="material-symbols-outlined text-outline">thermostat</span>
+</div>
+<div class="relative h-[200px] w-full flex items-end">
+<!-- SVG Curve -->
+<svg class="absolute inset-0 w-full h-full" preserveaspectratio="none" viewbox="0 0 100 100">
+<defs>
+<lineargradient id="lineGrad" x1="0" x2="1" y1="0" y2="0">
+<stop offset="0%" stop-color="#005d90"></stop>
+<stop offset="50%" stop-color="#a95f00"></stop>
+<stop offset="100%" stop-color="#005d90"></stop>
+</lineargradient>
+</defs>
+<path d="M0,70 Q25,20 50,40 T100,60" fill="none" stroke="url(#lineGrad)" stroke-linecap="round" stroke-width="3"></path>
+</svg>
+<!-- Dotted Line for Today -->
+<div class="absolute left-[50%] top-0 bottom-0 border-l-2 border-dashed border-tertiary opacity-50"></div>
+<!-- Min/Max Bubbles -->
+<div class="absolute left-[20%] top-[10%] bg-tertiary-container text-on-tertiary-container px-sm py-xs rounded-lg font-label-bold text-label-bold shadow-sm">34°</div>
+<div class="absolute left-[80%] top-[55%] bg-primary-container text-on-primary-container px-sm py-xs rounded-lg font-label-bold text-label-bold shadow-sm">22°</div>
+</div>
+<!-- X-Axis Labels -->
+<div class="flex justify-between mt-md font-body-md text-[14px] text-on-surface-variant px-sm">
+<span>Sen</span>
+<span>Sel</span>
+<span class="text-tertiary font-bold">Rab (Kini)</span>
+<span>Kam</span>
+<span>Jum</span>
+</div>
+</section>
+<!-- Rainfall Bar Chart -->
+<section class="bg-surface-container-lowest rounded-[24px] p-margin shadow-[0_4px_24px_rgba(0,0,0,0.04)] border border-surface-variant">
+<div class="flex justify-between items-center mb-lg">
+<h3 class="font-body-lg text-body-lg text-on-surface">Curah Hujan</h3>
+<span class="material-symbols-outlined text-primary">rainy</span>
+</div>
+<div class="flex justify-between items-end h-[180px] gap-sm">
+<!-- Bars -->
+<div class="flex flex-col items-center gap-xs w-full">
+<span class="material-symbols-outlined text-outline text-[16px]">water_drop</span>
+<span class="text-[12px] font-bold text-on-surface-variant">0</span>
+<div class="w-full bg-surface-variant rounded-t-md h-[10px]"></div>
+</div>
+<div class="flex flex-col items-center gap-xs w-full">
+<span class="material-symbols-outlined text-primary-fixed-dim text-[16px]">water_drop</span>
+<span class="text-[12px] font-bold text-primary">12</span>
+<div class="w-full bg-primary-fixed-dim rounded-t-md h-[40px]"></div>
+</div>
+<div class="flex flex-col items-center gap-xs w-full">
+<span class="material-symbols-outlined text-primary text-[16px]">water_drop</span>
+<span class="text-[12px] font-bold text-primary">45</span>
+<div class="w-full bg-primary rounded-t-md h-[120px]"></div>
+</div>
+<div class="flex flex-col items-center gap-xs w-full">
+<span class="material-symbols-outlined text-primary text-[16px]">water_drop</span>
+<span class="text-[12px] font-bold text-primary">20</span>
+<div class="w-full bg-primary opacity-80 rounded-t-md h-[70px]"></div>
+</div>
+<div class="flex flex-col items-center gap-xs w-full">
+<span class="material-symbols-outlined text-outline text-[16px]">water_drop</span>
+<span class="text-[12px] font-bold text-on-surface-variant">2</span>
+<div class="w-full bg-surface-variant rounded-t-md h-[15px]"></div>
+</div>
+</div>
+<!-- X-Axis Labels -->
+<div class="flex justify-between mt-sm font-body-md text-[14px] text-on-surface-variant border-t border-surface-variant pt-sm">
+<span class="w-full text-center">Sen</span>
+<span class="w-full text-center">Sel</span>
+<span class="w-full text-center text-primary font-bold">Rab</span>
+<span class="w-full text-center">Kam</span>
+<span class="w-full text-center">Jum</span>
+</div>
+</section>
+<!-- Community Reports Counter -->
+<section class="bg-surface-container-lowest rounded-[24px] p-margin shadow-[0_8px_32px_rgba(0,110,38,0.08)] border-2 border-secondary-fixed-dim relative overflow-hidden">
+<div class="absolute -right-8 -top-8 w-32 h-32 bg-secondary opacity-5 rounded-full blur-2xl"></div>
+<h3 class="font-headline-lg text-[24px] leading-[32px] font-bold text-on-surface mb-md">👥 128 Laporan Warga Hari Ini</h3>
+<div class="mb-lg">
+<div class="flex justify-between text-[14px] font-bold text-on-surface-variant mb-xs">
+<span>Cakupan Wilayah</span>
+<span class="text-secondary">85%</span>
+</div>
+<div class="h-4 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full w-[85%] bg-secondary rounded-full relative">
+<div class="absolute inset-0 bg-white/20 w-full h-full transform skew-x-12 translate-x-[-100%]"></div>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-sm bg-secondary-fixed/30 p-sm rounded-xl">
+<span class="material-symbols-outlined text-secondary">map</span>
+<span class="font-label-bold text-label-bold text-on-secondary-fixed-variant">🟢 Wilayahmu Sudah Terlindungi</span>
+</div>
+</section>
+</main>
+<!-- Bottom Nav Bar (From Shared Components JSON) -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-[32px] border-t-4 border-sky-100 dark:border-sky-900/30 shadow-[0_-8px_24px_rgba(0,119,182,0.08)] fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pt-3 pb-6 bg-white dark:bg-stone-950">
+<!-- Beranda -->
+<a class="flex flex-col items-center justify-center text-stone-500 dark:text-stone-400 px-4 py-2 min-h-[56px] hover:bg-sky-50 dark:hover:bg-stone-800 active:translate-y-1 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-plus-jakarta text-[12px] font-bold mt-1">Beranda</span>
+</a>
+<!-- Tanya AI -->
+<a class="flex flex-col items-center justify-center text-stone-500 dark:text-stone-400 px-4 py-2 min-h-[56px] hover:bg-sky-50 dark:hover:bg-stone-800 active:translate-y-1 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">smart_toy</span>
+<span class="font-plus-jakarta text-[12px] font-bold mt-1">Tanya AI</span>
+</a>
+<!-- Laporan -->
+<a class="flex flex-col items-center justify-center text-stone-500 dark:text-stone-400 px-4 py-2 min-h-[56px] hover:bg-sky-50 dark:hover:bg-stone-800 active:translate-y-1 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">add_location_alt</span>
+<span class="font-plus-jakarta text-[12px] font-bold mt-1">Laporan</span>
+</a>
+<!-- Data (ACTIVE) -->
+<a class="flex flex-col items-center justify-center bg-sky-100 dark:bg-sky-900/50 text-sky-800 dark:text-sky-200 rounded-2xl px-4 py-2 min-h-[56px] hover:bg-sky-50 dark:hover:bg-stone-800 active:translate-y-1 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">analytics</span>
+<span class="font-plus-jakarta text-[12px] font-bold mt-1">Data</span>
+</a>
+<!-- Profil -->
+<a class="flex flex-col items-center justify-center text-stone-500 dark:text-stone-400 px-4 py-2 min-h-[56px] hover:bg-sky-50 dark:hover:bg-stone-800 active:translate-y-1 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-plus-jakarta text-[12px] font-bold mt-1">Profil</span>
+</a>
+</nav>
+</body></html>
