@@ -62,8 +62,8 @@ app.post('/api/chat', async (req, res) => {
     const isRainQuery = message.toLowerCase().includes('hujan') || message.toLowerCase().includes('rain');
     const cta = {
       topic: isRainQuery ? "rainfall" : "general",
-      prompt: isRainQuery 
-        ? "Apakah di tempat kamu saat ini sedang hujan?" 
+      prompt: isRainQuery
+        ? "Apakah di tempat kamu saat ini sedang hujan?"
         : "Bantu kami dengan melaporkan kondisi cuaca terkini!",
       fields: isRainQuery ? ["rainfall_intensity"] : ["general_condition"]
     };
@@ -93,12 +93,12 @@ app.post('/api/contribute', async (req, res) => {
 
   // Validate user data against mock BMKG data (from plan.md concept)
   const tempDiff = Math.abs(conditions.temperature - MOCK_BMKG_DATA.temperature);
-  
+
   if (tempDiff <= 3) {
     // Add user contribution to vector store as mentioned in plan
     await vectorStore.addDocuments([
-      { 
-        id: `user_${Date.now()}`, 
+      {
+        id: `user_${Date.now()}`,
         content: `Laporan cuaca dari warga di ${location}: ${description || conditions.general_condition}`,
         metadata: { source: 'user_contributed', validation_score: 0.9 }
       }
@@ -121,7 +121,13 @@ app.get('/api/stats', (req, res) => {
   });
 });
 
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+// Export for Vercel serverless function
+export default app;
+
+// Start local server only when run directly (not in Vercel)
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  const PORT = process.env.PORT || 3001;
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
+}

@@ -10,10 +10,17 @@ export default function ContributionCTA() {
     setStatus('Submitting...');
 
     try {
-      const res = await fetch('http://localhost:8000/api/contribute', {
+      const res = await fetch('/api/contribute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ location, report })
+        body: JSON.stringify({
+          location,
+          description: report,
+          conditions: {
+            temperature: 32,
+            general_condition: report
+          }
+        })
       });
       if (res.ok) {
         setStatus('Report submitted successfully!');
