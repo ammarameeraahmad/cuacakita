@@ -1,4 +1,4 @@
-import { Document, VectorStore } from './types';
+import { Document, VectorStore } from './types.js';
 
 /**
  * A generic Mock Vector Store implementation for reference.

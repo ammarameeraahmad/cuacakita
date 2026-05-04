@@ -1,4 +1,4 @@
-import { MockVectorStore } from '../../src/rag/mock-vector-store';
+import { MockVectorStore } from '../src/rag/mock-vector-store.js';
 
 const vectorStore = new MockVectorStore();
 

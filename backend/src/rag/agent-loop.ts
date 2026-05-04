@@ -1,5 +1,5 @@
-import { Message, Tool, AgentState, AgentResponse } from './types';
-import { AGENTIC_RAG_SYSTEM_PROMPT } from './prompts';
+import { Message, Tool, AgentState, AgentResponse } from './types.js';
+import { AGENTIC_RAG_SYSTEM_PROMPT } from './prompts.js';
 
 /**
  * Placeholder for your actual LLM call logic.
