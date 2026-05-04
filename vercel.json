@@ -1,50 +1,13 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist",
-        "installCommand": "npm install",
-        "buildCommand": "npm run build"
-      }
-    },
-    {
-      "src": "backend/api/chat.ts",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "backend/api/contribute.ts",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "backend/api/stats.ts",
-      "use": "@vercel/node"
+    "experimentalServices": {
+        "frontend": {
+            "entrypoint": "frontend",
+            "routePrefix": "/",
+            "framework": "vite"
+        },
+        "backend": {
+            "entrypoint": "backend",
+            "routePrefix": "/_/backend"
+        }
     }
-  ],
-  "routes": [
-    {
-      "src": "/api/chat",
-      "methods": ["POST"],
-      "dest": "/backend/api/chat.ts"
-    },
-    {
-      "src": "/api/contribute",
-      "methods": ["POST"],
-      "dest": "/backend/api/contribute.ts"
-    },
-    {
-      "src": "/api/stats",
-      "methods": ["GET"],
-      "dest": "/backend/api/stats.ts"
-    },
-    {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/frontend/dist/$1"
-    }
-  ]
 }
