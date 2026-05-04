@@ -1,12 +1,12 @@
 .app-shell {
-  width: min(100%, 480px);
+  width: min(100%, 1280px);
   min-height: 100svh;
   display: flex;
   flex-direction: column;
   margin: 0 auto;
   background: #f7f9ff;
   box-shadow: 0 0 0 1px rgba(224, 226, 232, 0.8);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .top-bar {
@@ -141,8 +141,7 @@
 
 .app-content {
   flex: 1 1 auto;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  overflow: visible;
   padding-bottom: 12px;
 }
 
@@ -151,6 +150,9 @@
   flex-direction: column;
   gap: 24px;
   padding: 18px 20px 28px;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
 }
 
 .screen--chat,
@@ -365,6 +367,28 @@
   overflow-x: auto;
   padding-bottom: 4px;
   scrollbar-width: none;
+}
+
+.time-tab {
+  min-height: 56px;
+  padding: 0 18px;
+  border-radius: 9999px;
+  border: 1px solid #bfc7d1;
+  background: #ebeef4;
+  color: #404850;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 800;
+  box-shadow: 0 0 12px rgba(0, 93, 144, 0.05);
+  flex-shrink: 0;
+}
+
+.time-tab--active {
+  background: #005d90;
+  color: #ffffff;
+  border-color: #005d90;
 }
 
 .forecast-row::-webkit-scrollbar,
@@ -1035,6 +1059,65 @@
   font-weight: 800;
 }
 
+.composer {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) 56px;
+  gap: 10px;
+  align-items: center;
+  padding-top: 4px;
+}
+
+.composer__mic,
+.composer__send {
+  width: 56px;
+  height: 56px;
+  border: none;
+  border-radius: 9999px;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 0 12px rgba(0, 93, 144, 0.06);
+}
+
+.composer__mic {
+  background: #fff;
+  color: #005d90;
+}
+
+.composer__send {
+  background: #006e26;
+  color: #ffffff;
+}
+
+.composer__field {
+  min-height: 60px;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 1px solid #bfc7d1;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  box-shadow: 0 0 12px rgba(0, 93, 144, 0.05);
+}
+
+.composer__field input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #181c20;
+  font-size: 1rem;
+}
+
+.report-status {
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: #f1f4f9;
+  border: 1px solid #e0e2e8;
+  color: #404850;
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+
 .profile-hero {
   display: flex;
   flex-direction: column;
@@ -1217,6 +1300,9 @@
   border-top: 1px solid rgba(191, 199, 209, 0.78);
   box-shadow: 0 -8px 24px rgba(0, 93, 144, 0.06);
   flex: 0 0 auto;
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
 }
 
 .bottom-nav__item {
@@ -1267,5 +1353,52 @@
 
   .advice-card__lead {
     font-size: 1.45rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .top-bar {
+    padding: 24px 32px 20px;
+  }
+
+  .screen {
+    padding: 28px 32px 40px;
+    gap: 28px;
+  }
+
+  .page-hero h2 {
+    font-size: 2.4rem;
+  }
+
+  .hero-card {
+    grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+  }
+
+  .metrics-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .weather-grid--report {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .achievement-card {
+    flex-basis: 180px;
+  }
+
+  .forecast-card {
+    flex-basis: 124px;
+  }
+
+  .chat-bubble {
+    max-width: 72%;
+  }
+
+  .app-content {
+    padding-bottom: 24px;
   }
 }

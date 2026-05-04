@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ArrowRight,
   BarChart3,
@@ -25,6 +25,7 @@ import {
   Wind,
 } from 'lucide-react';
 import './App.css';
+import { getStats, getWeather, submitContribution, sendChat } from './lib/api.js';
 
 const tabs = [
   { id: 'beranda', label: 'Beranda', icon: Home },
@@ -40,12 +41,6 @@ const forecastDays = [
   { day: 'RAB', icon: SunMedium, high: '32°', low: '25°' },
   { day: 'KAM', icon: CloudSun, high: '31°', low: '24°' },
   { day: 'JUM', icon: CloudRain, high: '29°', low: '23°' },
-];
-
-const temperatureMetrics = [
-  { icon: Droplets, label: 'Kelembaban', value: '78%' },
-  { icon: Wind, label: 'Angin', value: '12 km/j' },
-  { icon: Eye, label: 'Jarak pandang', value: '8 km' },
 ];
 
 const weatherOptions = [
@@ -75,27 +70,210 @@ const leaderboard = [
   { rank: 3, name: 'Mas Agus', reports: '38 Laporan', avatar: '👨' },
 ];
 
+const fallbackWeather = {
+  locationLabel: 'Desa Sukamaju, 12 Okt',
+  subLabel: 'Senin, 30 Maret 2024',
+  current: {
+    temperature: 28,
+    description: 'Hujan Ringan',
+    humidity: 78,
+    windSpeed: 12,
+    visibility: 8,
+    icon: '🌧️',
+  },
+  forecast: [
+    { day: 'SEN', label: 'Senin', description: 'Hujan Ringan', icon: '🌧️', high: 28, low: 23, rainChance: 70 },
+    { day: 'SEL', label: 'Selasa', description: 'Berawan', icon: '⛅', high: 30, low: 24, rainChance: 40 },
+    { day: 'RAB', label: 'Rabu', description: 'Cerah', icon: '☀️', high: 32, low: 25, rainChance: 10 },
+    { day: 'KAM', label: 'Kamis', description: 'Berawan', icon: '⛅', high: 31, low: 24, rainChance: 35 },
+    { day: 'JUM', label: 'Jumat', description: 'Hujan Ringan', icon: '🌧️', high: 29, low: 23, rainChance: 60 },
+  ],
+  temperatureSeries: [28, 30, 32, 31, 29],
+  rainfallSeries: [0, 12, 45, 20, 2],
+  summary: 'Data BMKG belum tersedia, memakai data demo untuk Desa Sukamaju.',
+};
+
+function buildTemperaturePath(values) {
+  if (!values || values.length < 2) {
+    return 'M0,70 Q25,18 50,38 T100,58';
+  }
+
+  const maxValue = Math.max(...values);
+  const minValue = Math.min(...values);
+  const range = Math.max(maxValue - minValue, 1);
+  const step = 100 / (values.length - 1);
+  const points = values.map((value, index) => {
+    const x = index * step;
+    const y = 78 - ((value - minValue) / range) * 52;
+    return { x, y };
+  });
+
+  let path = `M${points[0].x},${points[0].y}`;
+
+  for (let index = 1; index < points.length; index += 1) {
+    const previous = points[index - 1];
+    const current = points[index];
+    const midX = (previous.x + current.x) / 2;
+    path += ` Q${midX},${previous.y} ${current.x},${current.y}`;
+  }
+
+  return path;
+}
+
 function App() {
   const [activeTab, setActiveTab] = useState('beranda');
+  const [weather, setWeather] = useState(null);
+  const [stats, setStats] = useState(null);
+  const [activeRange, setActiveRange] = useState('7 Hari');
+  const [chatMessages, setChatMessages] = useState([
+    {
+      id: 'welcome',
+      role: 'assistant',
+      content: 'Tanya apa saja tentang cuaca di desa kamu.',
+    },
+  ]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const [reportState, setReportState] = useState({
+    location: 'Sleman, Yogyakarta',
+    condition: 'Hujan',
+    intensity: 'Sedang',
+    temperature: 28,
+    description: '',
+  });
+  const [reportStatus, setReportStatus] = useState('');
+  const [reportLoading, setReportLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadData = async () => {
+      try {
+        const [weatherResponse, statsResponse] = await Promise.allSettled([
+          getWeather('Desa Sukamaju, 12 Okt'),
+          getStats(),
+        ]);
+
+        if (!cancelled && weatherResponse.status === 'fulfilled') {
+          setWeather(weatherResponse.value);
+        }
+
+        if (!cancelled && statsResponse.status === 'fulfilled') {
+          setStats(statsResponse.value);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    loadData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleSendChat = async (message) => {
+    const text = message.trim();
+
+    if (!text || chatLoading) {
+      return;
+    }
+
+    setChatLoading(true);
+    setChatMessages((current) => [
+      ...current,
+      { id: `user-${Date.now()}`, role: 'user', content: text },
+    ]);
+
+    try {
+      const response = await sendChat(text, weather?.locationLabel || 'Desa Sukamaju, 12 Okt');
+      setChatMessages((current) => [
+        ...current,
+        { id: `assistant-${Date.now()}`, role: 'assistant', content: response.answer },
+      ]);
+    } catch (error) {
+      console.error(error);
+      setChatMessages((current) => [
+        ...current,
+        {
+          id: `error-${Date.now()}`,
+          role: 'assistant',
+          content: 'Maaf, AI sedang tidak bisa dihubungi. Coba lagi beberapa saat.',
+        },
+      ]);
+    } finally {
+      setChatLoading(false);
+      setChatInput('');
+    }
+  };
+
+  const handleSubmitReport = async () => {
+    if (reportLoading) {
+      return;
+    }
+
+    setReportLoading(true);
+    setReportStatus('Mengirim laporan...');
+
+    try {
+      const response = await submitContribution({
+        location: reportState.location,
+        description: `Kondisi ${reportState.condition.toLowerCase()} dengan intensitas ${reportState.intensity.toLowerCase()}`,
+        conditions: {
+          temperature: reportState.temperature,
+          general_condition: reportState.condition,
+          rainfall_intensity: reportState.intensity,
+        },
+      });
+
+      setReportStatus(response.message);
+    } catch (error) {
+      console.error(error);
+      setReportStatus('Gagal mengirim laporan.');
+    } finally {
+      setReportLoading(false);
+    }
+  };
 
   return (
     <div className="app-shell">
-      <TopBar activeTab={activeTab} />
+      <TopBar activeTab={activeTab} weather={weather} />
       <main className="app-content">
-        {activeTab === 'beranda' && <HomeScreen />}
-        {activeTab === 'tanya' && <ChatScreen />}
-        {activeTab === 'laporan' && <ReportScreen />}
-        {activeTab === 'data' && <DataScreen />}
-        {activeTab === 'profil' && <ProfileScreen />}
+        {activeTab === 'beranda' && <HomeScreen weather={weather} />}
+        {activeTab === 'tanya' && (
+          <ChatScreen
+            messages={chatMessages}
+            inputValue={chatInput}
+            loading={chatLoading}
+            onInputChange={setChatInput}
+            onSubmit={handleSendChat}
+          />
+        )}
+        {activeTab === 'laporan' && (
+          <ReportScreen
+            weather={weather}
+            reportState={reportState}
+            onChangeReportState={setReportState}
+            onSubmit={handleSubmitReport}
+            status={reportStatus}
+            loading={reportLoading}
+          />
+        )}
+        {activeTab === 'data' && (
+          <DataScreen weather={weather} stats={stats} activeRange={activeRange} onRangeChange={setActiveRange} />
+        )}
+        {activeTab === 'profil' && <ProfileScreen stats={stats} weather={weather} />}
       </main>
       <BottomNav activeTab={activeTab} onChange={setActiveTab} />
     </div>
   );
 }
 
-function TopBar({ activeTab }) {
+function TopBar({ activeTab, weather }) {
   const isChat = activeTab === 'tanya';
   const isReport = activeTab === 'laporan';
+  const activeWeather = weather || fallbackWeather;
 
   if (isReport) {
     return (
@@ -142,8 +320,8 @@ function TopBar({ activeTab }) {
         <div className="top-bar__title-group">
           <MapPin className="top-bar__location-icon" size={22} />
           <div>
-            <h1 className="top-bar__title">Desa Sukamaju, 12 Okt</h1>
-            {!isReport && <p className="top-bar__subtitle">Senin, 30 Maret 2024</p>}
+            <h1 className="top-bar__title">{activeWeather.locationLabel}</h1>
+            {!isReport && <p className="top-bar__subtitle">{activeWeather.subLabel}</p>}
           </div>
         </div>
         {!isReport ? (
@@ -156,13 +334,17 @@ function TopBar({ activeTab }) {
   );
 }
 
-function HomeScreen() {
+function HomeScreen({ weather }) {
+  const snapshot = weather || fallbackWeather;
+
   return (
     <div className="screen screen--home">
       <section className="hero-card">
         <div className="hero-card__copy">
-          <div className="hero-card__temp">28°C</div>
-          <div className="hero-pill">HUJAN RINGAN <span aria-hidden="true">🌧️</span></div>
+          <div className="hero-card__temp">{snapshot.current.temperature}°C</div>
+          <div className="hero-pill">
+            {snapshot.current.description.toUpperCase()} <span aria-hidden="true">{snapshot.current.icon}</span>
+          </div>
         </div>
         <div className="hero-card__art" aria-hidden="true">
           <div className="hero-card__art-window">
@@ -174,23 +356,31 @@ function HomeScreen() {
           </div>
         </div>
         <div className="metrics-grid">
-          {temperatureMetrics.map(({ icon: Icon, label, value }) => (
-            <article key={label} className="metric-card">
-              <Icon className="metric-card__icon" size={28} />
-              <h2>{label}</h2>
-              <p>{value}</p>
-            </article>
-          ))}
+          <article className="metric-card">
+            <Droplets className="metric-card__icon" size={28} />
+            <h2>Kelembaban</h2>
+            <p>{snapshot.current.humidity}%</p>
+          </article>
+          <article className="metric-card">
+            <Wind className="metric-card__icon" size={28} />
+            <h2>Angin</h2>
+            <p>{snapshot.current.windSpeed} km/j</p>
+          </article>
+          <article className="metric-card">
+            <Eye className="metric-card__icon" size={28} />
+            <h2>Jarak pandang</h2>
+            <p>{snapshot.current.visibility} km</p>
+          </article>
         </div>
       </section>
 
       <section className="section-block">
         <h2 className="section-title">Prakiraan 5 Hari</h2>
         <div className="forecast-row">
-          {forecastDays.map(({ day, icon: Icon, high, low }) => (
+          {snapshot.forecast.map(({ day, icon, high, low }) => (
             <article key={day} className="forecast-card">
               <span className="forecast-card__day">{day}</span>
-              <Icon className="forecast-card__icon" size={28} />
+              <span className="forecast-card__icon" aria-hidden="true">{icon}</span>
               <div className="forecast-card__temps">
                 <span>{high}</span>
                 <span>{low}</span>
@@ -230,7 +420,7 @@ function HomeScreen() {
   );
 }
 
-function ChatScreen() {
+function ChatScreen({ messages, inputValue, loading, onInputChange, onSubmit }) {
   const prompts = [
     { label: 'Akan hujan hari ini?', emoji: '🌧️' },
     { label: 'Kapan waktu tanam?', emoji: '🌾' },
@@ -242,7 +432,7 @@ function ChatScreen() {
     <div className="screen screen--chat">
       <div className="chip-row chip-row--chat">
         {prompts.map((prompt) => (
-          <button key={prompt.label} className="chip" type="button">
+          <button key={prompt.label} className="chip" type="button" onClick={() => onSubmit(prompt.label)}>
             <span className="chip__emoji" aria-hidden="true">{prompt.emoji}</span>
             <span>{prompt.label}</span>
           </button>
@@ -250,16 +440,29 @@ function ChatScreen() {
       </div>
 
       <div className="chat-thread">
-        <div className="chat-bubble chat-bubble--user">Akan hujan hari ini?</div>
+        {messages.map((message) =>
+          message.role === 'user' ? (
+            <div key={message.id} className="chat-bubble chat-bubble--user">
+              {message.content}
+            </div>
+          ) : (
+            <div key={message.id} className="chat-message-row">
+              <div className="bot-avatar" aria-hidden="true">
+                <Bot size={28} />
+              </div>
+              <div className="chat-bubble chat-bubble--bot">{message.content}</div>
+            </div>
+          )
+        )}
 
-        <div className="chat-message-row">
-          <div className="bot-avatar" aria-hidden="true">
-            <Bot size={28} />
+        {loading ? (
+          <div className="chat-message-row">
+            <div className="bot-avatar" aria-hidden="true">
+              <Bot size={28} />
+            </div>
+            <div className="chat-bubble chat-bubble--bot">Sedang menganalisis data BMKG dan pengetahuan cuaca...</div>
           </div>
-          <div className="chat-bubble chat-bubble--bot">
-            Hujan 🌧️ akan mulai pukul 14.00 🕒. Pastikan jemuran sudah diangkat ya, Pak!
-          </div>
-        </div>
+        ) : null}
 
         <section className="confirm-card">
           <div className="confirm-card__title">
@@ -304,9 +507,20 @@ function ChatScreen() {
           <Mic size={24} />
         </button>
         <label className="composer__field">
-          <input type="text" placeholder="Ketik atau tekan mic..." />
+          <input
+            type="text"
+            placeholder="Ketik atau tekan mic..."
+            value={inputValue}
+            onChange={(event) => onInputChange(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                onSubmit(inputValue);
+              }
+            }}
+          />
         </label>
-        <button className="composer__send" type="button" aria-label="Kirim pesan">
+        <button className="composer__send" type="button" aria-label="Kirim pesan" onClick={() => onSubmit(inputValue)}>
           <Send size={22} />
         </button>
       </div>
@@ -314,7 +528,8 @@ function ChatScreen() {
   );
 }
 
-function ReportScreen() {
+function ReportScreen({ weather, reportState, onChangeReportState, onSubmit, status, loading }) {
+  const snapshot = weather || fallbackWeather;
   const weatherSteps = ['Lokasi', 'Kondisi', 'Kirim'];
 
   return (
@@ -334,9 +549,13 @@ function ReportScreen() {
         <h3>Langkah 1: Lokasi</h3>
         <div className="map-card">
           <div className="map-pin" aria-hidden="true">📍</div>
-          <div className="map-label">Sleman, Yogyakarta</div>
+          <div className="map-label">{reportState.location || snapshot.locationLabel}</div>
         </div>
-        <button className="primary-button" type="button">
+        <button
+          className="primary-button"
+          type="button"
+          onClick={() => onChangeReportState((current) => ({ ...current, location: snapshot.locationLabel }))}
+        >
           Gunakan Lokasi Saya <span aria-hidden="true">📍</span>
         </button>
       </section>
@@ -347,8 +566,9 @@ function ReportScreen() {
           {weatherOptions.map((option) => (
             <button
               key={option.label}
-              className={`weather-tile weather-tile--report ${option.active ? 'weather-tile--active' : ''}`}
+              className={`weather-tile weather-tile--report ${reportState.condition === option.label ? 'weather-tile--active' : ''}`}
               type="button"
+              onClick={() => onChangeReportState((current) => ({ ...current, condition: option.label }))}
             >
               <span aria-hidden="true">{option.emoji}</span>
               <span>{option.label}</span>
@@ -362,8 +582,9 @@ function ReportScreen() {
             {rainIntensity.map((item) => (
               <button
                 key={item.label}
-                className={`pill-option ${item.active ? 'pill-option--active' : ''}`}
+                className={`pill-option ${reportState.intensity === item.label ? 'pill-option--active' : ''}`}
                 type="button"
+                onClick={() => onChangeReportState((current) => ({ ...current, intensity: item.label }))}
               >
                 <span aria-hidden="true">💧</span>
                 {item.label}
@@ -375,33 +596,49 @@ function ReportScreen() {
         <div className="selector-card selector-card--temperature">
           <div className="selector-card__title">Suhu:</div>
           <div className="temperature-control">
-            <button className="round-control" type="button" aria-label="Kurangi suhu">
+            <button
+              className="round-control"
+              type="button"
+              aria-label="Kurangi suhu"
+              onClick={() => onChangeReportState((current) => ({ ...current, temperature: Math.max(16, current.temperature - 1) }))}
+            >
               <Minus size={24} />
             </button>
-            <div className="temperature-control__value">28°C</div>
-            <button className="round-control" type="button" aria-label="Tambah suhu">
+            <div className="temperature-control__value">{reportState.temperature}°C</div>
+            <button
+              className="round-control"
+              type="button"
+              aria-label="Tambah suhu"
+              onClick={() => onChangeReportState((current) => ({ ...current, temperature: Math.min(45, current.temperature + 1) }))}
+            >
               <Plus size={24} />
             </button>
           </div>
         </div>
       </section>
 
-      <button className="submit-button" type="button">
-        KIRIM LAPORAN
+      {status ? <div className="report-status">{status}</div> : null}
+
+      <button className="submit-button" type="button" onClick={onSubmit} disabled={loading}>
+        {loading ? 'MENGIRIM...' : 'KIRIM LAPORAN'}
       </button>
     </div>
   );
 }
 
-function DataScreen() {
-  const weatherChartPath = 'M0,70 Q25,18 50,38 T100,58';
-  const rainfall = [
-    { label: 'Sen', value: '0', height: '10px', tone: 'muted' },
-    { label: 'Sel', value: '12', height: '42px', tone: 'soft' },
-    { label: 'Rab', value: '45', height: '128px', tone: 'strong' },
-    { label: 'Kam', value: '20', height: '74px', tone: 'medium' },
-    { label: 'Jum', value: '2', height: '16px', tone: 'muted' },
-  ];
+function DataScreen({ weather, stats, activeRange, onRangeChange }) {
+  const snapshot = weather || fallbackWeather;
+  const weatherChartPath = buildTemperaturePath(snapshot.temperatureSeries);
+  const rainfall = snapshot.rainfallSeries.map((value, index) => {
+    const labels = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum'];
+
+    return {
+      label: labels[index] || `H${index + 1}`,
+      value: String(value),
+      height: `${Math.max(10, Math.min(132, value * 2.4))}px`,
+      tone: index === 2 ? 'strong' : index === 1 ? 'soft' : index === 3 ? 'medium' : 'muted',
+    };
+  });
 
   return (
     <div className="screen screen--data">
@@ -411,13 +648,13 @@ function DataScreen() {
           <h2>Tren Cuaca Lokal</h2>
         </div>
         <div className="time-tabs" role="tablist" aria-label="Rentang waktu">
-          <button className="time-tab time-tab--active" type="button">
+          <button className={`time-tab ${activeRange === '7 Hari' ? 'time-tab--active' : ''}`} type="button" onClick={() => onRangeChange('7 Hari')}>
             7 Hari
           </button>
-          <button className="time-tab" type="button">
+          <button className={`time-tab ${activeRange === '1 Bulan' ? 'time-tab--active' : ''}`} type="button" onClick={() => onRangeChange('1 Bulan')}>
             1 Bulan
           </button>
-          <button className="time-tab" type="button">
+          <button className={`time-tab ${activeRange === '1 Tahun' ? 'time-tab--active' : ''}`} type="button" onClick={() => onRangeChange('1 Tahun')}>
             1 Tahun
           </button>
         </div>
@@ -440,15 +677,15 @@ function DataScreen() {
             <path d={weatherChartPath} fill="none" stroke="url(#curveGradient)" strokeWidth="3" strokeLinecap="round" />
           </svg>
           <div className="today-marker" />
-          <div className="chart-bubble chart-bubble--high">34°</div>
-          <div className="chart-bubble chart-bubble--low">22°</div>
+          <div className="chart-bubble chart-bubble--high">{Math.max(...snapshot.temperatureSeries)}°</div>
+          <div className="chart-bubble chart-bubble--low">{Math.min(...snapshot.temperatureSeries)}°</div>
         </div>
         <div className="axis-labels">
-          <span>Sen</span>
-          <span>Sel</span>
-          <span className="axis-labels__active">Rab (Kini)</span>
-          <span>Kam</span>
-          <span>Jum</span>
+          {snapshot.forecast.map((day, index) => (
+            <span key={day.day} className={index === 2 ? 'axis-labels__active' : ''}>
+              {day.day}{index === 2 ? ' (Kini)' : ''}
+            </span>
+          ))}
         </div>
       </section>
 
@@ -472,25 +709,35 @@ function DataScreen() {
       <section className="reports-card">
         <div className="reports-card__title">
           <Trophy size={22} />
-          <h3>128 Laporan Warga Hari Ini</h3>
+          <h3>{stats?.totalContributions ?? 128} Laporan Warga Hari Ini</h3>
         </div>
         <div className="reports-card__meta">
           <span>Cakupan Wilayah</span>
-          <span className="reports-card__value">85%</span>
+          <span className="reports-card__value">{Math.max(50, Math.min(98, Math.round((stats?.acceptedContributions ?? 85) / 13)))}%</span>
         </div>
         <div className="progress-track">
-          <div className="progress-track__fill" />
+          <div className="progress-track__fill" style={{ width: `${Math.max(50, Math.min(98, Math.round((stats?.acceptedContributions ?? 85) / 13)))}%` }} />
         </div>
         <div className="coverage-pill">
           <span aria-hidden="true">🗺️</span>
-          <span>Wilayahmu Sudah Terlindungi</span>
+          <span>{snapshot.summary}</span>
         </div>
       </section>
     </div>
   );
 }
 
-function ProfileScreen() {
+function ProfileScreen({ stats, weather }) {
+  const snapshot = weather || fallbackWeather;
+  const statValues = stats || {
+    totalQueries: 450,
+    totalContributions: 1250,
+    acceptedContributions: 1100,
+    rejectedContributions: 150,
+    activeUsers: 300,
+    avgValidationScore: 0.85,
+  };
+
   return (
     <div className="screen screen--profile">
       <section className="profile-hero">
@@ -511,28 +758,28 @@ function ProfileScreen() {
         <article className="stat-card stat-card--reports">
           <div className="stat-card__icon">📤</div>
           <div>
-            <div className="stat-card__value">47</div>
+            <div className="stat-card__value">{statValues.totalContributions}</div>
             <div className="stat-card__label">Total Laporan</div>
           </div>
         </article>
         <article className="stat-card stat-card--accepted">
           <div className="stat-card__icon">✅</div>
           <div>
-            <div className="stat-card__value">43</div>
+            <div className="stat-card__value">{statValues.acceptedContributions}</div>
             <div className="stat-card__label">Diterima</div>
           </div>
         </article>
         <article className="stat-card stat-card--accuracy">
           <div className="stat-card__icon">🎯</div>
           <div>
-            <div className="stat-card__value">91%</div>
+            <div className="stat-card__value">{Math.round(statValues.avgValidationScore * 100)}%</div>
             <div className="stat-card__label">Akurasi</div>
           </div>
         </article>
         <article className="stat-card stat-card--rank">
           <div className="stat-card__icon">🏆</div>
           <div>
-            <div className="stat-card__value">#12</div>
+            <div className="stat-card__value">#{Math.max(1, 25 - Math.round(statValues.avgValidationScore * 10))}</div>
             <div className="stat-card__label">Peringkat Desa</div>
           </div>
         </article>
@@ -563,7 +810,7 @@ function ProfileScreen() {
               <div className="leaderboard-row__avatar" aria-hidden="true">{entry.avatar}</div>
               <div className="leaderboard-row__copy">
                 <div className="leaderboard-row__name">{entry.name}</div>
-                <div className="leaderboard-row__meta">{entry.reports}</div>
+                <div className="leaderboard-row__meta">{entry.reports} • {snapshot.current.description}</div>
               </div>
               {entry.rank === 1 ? <Star size={18} /> : null}
             </article>

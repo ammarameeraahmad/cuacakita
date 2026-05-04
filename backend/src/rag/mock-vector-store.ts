@@ -13,19 +13,35 @@ export class MockVectorStore implements VectorStore {
 
   async similaritySearch(query: string, limit: number = 3): Promise<Document[]> {
     console.log(`[MockVectorStore] Searching for: "${query}"`);
-    // Mock simple keyword matching instead of real embeddings
-    const queryLower = query.toLowerCase();
-    
-    // Sort by a mock "score" based on keyword matches (just random/mocked for now)
+    const queryTerms = query
+      .toLowerCase()
+      .split(/\s+/)
+      .map((term) => term.trim())
+      .filter(Boolean);
+
     const results = this.documents
-      .filter(doc => doc.content.toLowerCase().includes(queryLower) || true) // always return something for mock
-      .map(doc => ({
-        ...doc,
-        score: Math.random() // mock score
-      }))
+      .map((doc) => {
+        const content = doc.content.toLowerCase();
+        const matches = queryTerms.reduce((total, term) => total + (content.includes(term) ? 1 : 0), 0);
+
+        return {
+          ...doc,
+          score: queryTerms.length === 0 ? 0.1 : matches / queryTerms.length
+        };
+      })
+      .filter((doc) => (doc.score || 0) > 0)
       .sort((a, b) => (b.score || 0) - (a.score || 0))
       .slice(0, limit);
 
-    return results;
+    if (results.length > 0) {
+      return results;
+    }
+
+    return this.documents
+      .slice(0, limit)
+      .map((doc, index) => ({
+        ...doc,
+        score: Math.max(0.1, 0.8 - index * 0.1)
+      }));
   }
 }

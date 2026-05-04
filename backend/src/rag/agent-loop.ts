@@ -1,29 +1,6 @@
 import { Message, Tool, AgentState, AgentResponse } from './types.js';
 import { AGENTIC_RAG_SYSTEM_PROMPT } from './prompts.js';
-
-/**
- * Placeholder for your actual LLM call logic.
- * In a real implementation, this would connect to OpenAI, Anthropic, Gemini, etc.
- */
-async function callLLM(messages: Message[], tools: Tool[]): Promise<any> {
-  // Mock LLM Response: Return a tool call or final text
-  console.log("Mock LLM called with", messages.length, "messages.");
-  
-  // Example mock heuristic: If tool isn't used, use it; otherwise, answer.
-  const hasToolCall = messages.some(m => m.role === 'tool');
-  if (!hasToolCall) {
-    return {
-      type: 'tool_call',
-      toolName: tools[0]?.name || 'unknown',
-      toolInput: 'example query'
-    };
-  }
-
-  return {
-    type: 'text',
-    content: 'Based on the context retrieved, here is the final answer...'
-  };
-}
+import { callGroqChatCompletion } from '../lib/groq.js';
 
 /**
  * The core Agentic RAG ReAct (Reason, Act, Observe) loop.
@@ -51,52 +28,29 @@ export async function runAgentLoop(
 
   while (state.currentStep < state.maxSteps && state.status === 'running') {
     state.currentStep++;
-    console.log(`--- Step ${state.currentStep} ---`);
 
-    // 1. Reason: Ask the LLM what to do next
-    const llmResponse = await callLLM(state.messages, tools);
+    const toolOutputs: string[] = [];
 
-    // 2. Act: Execute tool if requested
-    if (llmResponse.type === 'tool_call') {
-      console.log(`[Agent] Calling tool: ${llmResponse.toolName}`);
-      
-      const toolToRun = tools.find(t => t.name === llmResponse.toolName);
-      let toolResult = '';
-
-      if (toolToRun) {
-        try {
-          toolResult = await toolToRun.execute(llmResponse.toolInput);
-        } catch (error: any) {
-          toolResult = `Error executing tool: ${error.message}`;
-        }
-      } else {
-        toolResult = `Tool ${llmResponse.toolName} not found.`;
+    for (const tool of tools) {
+      try {
+        const output = await tool.execute(userTask);
+        toolOutputs.push(`${tool.name}: ${output}`);
+      } catch (error: any) {
+        toolOutputs.push(`${tool.name}: Error executing tool - ${error.message}`);
       }
-
-      // 3. Observe: Add tool output to history so the LLM can process it next iteration
-      state.messages.push({
-        role: 'assistant',
-        content: `Thought: I need to use ${llmResponse.toolName}.`,
-        toolCallId: 'mock-call-id',
-        name: llmResponse.toolName
-      });
-      state.messages.push({
-        role: 'tool',
-        content: toolResult,
-        toolCallId: 'mock-call-id',
-        name: llmResponse.toolName
-      });
-
-    } else if (llmResponse.type === 'text') {
-      // Agent has concluded and provided a final answer
-      console.log(`[Agent] Final Answer generated.`);
-      state.messages.push({
-        role: 'assistant',
-        content: llmResponse.content
-      });
-      state.status = 'success';
-      break;
     }
+
+    const responseText = await callGroqChatCompletion([
+      { role: 'system', content: `${AGENTIC_RAG_SYSTEM_PROMPT}\n\nGunakan konteks cuaca BMKG dan hasil pencarian pengetahuan di bawah ini untuk menjawab dengan jelas, ringkas, dan natural dalam Bahasa Indonesia.` },
+      { role: 'user', content: `Pertanyaan pengguna: ${userTask}\n\nKonteks alat:\n${toolOutputs.join('\n\n') || 'Tidak ada konteks alat yang tersedia.'}` },
+    ]);
+
+    state.messages.push({
+      role: 'assistant',
+      content: responseText,
+    });
+    state.status = 'success';
+    break;
   }
 
   if (state.status !== 'success') {
