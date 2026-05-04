@@ -1,9 +1,9 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { runAgentLoop } from './rag/agent-loop';
-import { Tool, Document } from './rag/types';
-import { MockVectorStore } from './rag/mock-vector-store';
+import { runAgentLoop } from './rag/agent-loop.js';
+import { Tool, Document } from './rag/types.js';
+import { MockVectorStore } from './rag/mock-vector-store.js';
 
 dotenv.config();
 
@@ -49,7 +49,7 @@ const tools: Tool[] = [
 ];
 
 // POST /api/chat
-app.post('/api/chat', async (req, res) => {
+app.post('/api/chat', async (req: Request, res: Response) => {
   try {
     const { message, location } = req.body;
     if (!message) {
@@ -85,7 +85,7 @@ app.post('/api/chat', async (req, res) => {
 });
 
 // POST /api/contribute
-app.post('/api/contribute', async (req, res) => {
+app.post('/api/contribute', async (req: Request, res: Response) => {
   const { location, conditions, description } = req.body;
   if (!conditions || typeof conditions.temperature !== 'number') {
     return res.status(400).json({ error: 'Invalid temperature data in conditions' });
@@ -110,7 +110,7 @@ app.post('/api/contribute', async (req, res) => {
 });
 
 // GET /api/stats
-app.get('/api/stats', (req, res) => {
+app.get('/api/stats', (req: Request, res: Response) => {
   res.json({
     totalQueries: 450,
     totalContributions: 1250,

@@ -1,6 +1,7 @@
-import { runAgentLoop } from '../../src/rag/agent-loop';
-import { Tool } from '../../src/rag/types';
-import { MockVectorStore } from '../../src/rag/mock-vector-store';
+import { Request, Response } from 'express';
+import { runAgentLoop } from '../../src/rag/agent-loop.js';
+import { Tool } from '../../src/rag/types.js';
+import { MockVectorStore } from '../../src/rag/mock-vector-store.js';
 
 const vectorStore = new MockVectorStore();
 vectorStore.addDocuments([
@@ -36,7 +37,7 @@ const tools: Tool[] = [
   }
 ];
 
-export default async function handler(req: any, res: any) {
+export default async function handler(req: Request, res: Response) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }

@@ -1,4 +1,5 @@
-import { MockVectorStore } from '../../src/rag/mock-vector-store';
+import { Request, Response } from 'express';
+import { MockVectorStore } from '../../src/rag/mock-vector-store.js';
 
 const vectorStore = new MockVectorStore();
 
@@ -10,7 +11,7 @@ const MOCK_BMKG_DATA = {
   timestamp: new Date().toISOString()
 };
 
-export default async function handler(req: any, res: any) {
+export default async function handler(req: Request, res: Response) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
