@@ -1,9 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { runAgentLoop } from './rag/agent-loop';
-import { Tool, Document } from './rag/types';
-import { MockVectorStore } from './rag/mock-vector-store';
+import { runAgentLoop } from './rag/agent-loop.js';
+import { Tool, Document } from './rag/types.js';
+import { MockVectorStore } from './rag/mock-vector-store.js';
 
 dotenv.config();
 
@@ -43,7 +43,7 @@ const tools: Tool[] = [
     execute: async (input: string) => {
       const docs = await vectorStore.similaritySearch(input, 2);
       if (docs.length === 0) return "No specific climate information found.";
-      return docs.map(d => `[${d.metadata?.source}] ${d.content}`).join('\n');
+      return docs.map((d: Document) => `[${d.metadata?.source}] ${d.content}`).join('\n');
     }
   }
 ];

@@ -1,6 +1,6 @@
-import { runAgentLoop } from '../../src/rag/agent-loop';
-import { Tool } from '../../src/rag/types';
-import { MockVectorStore } from '../../src/rag/mock-vector-store';
+import { runAgentLoop } from '../src/rag/agent-loop.js';
+import { Tool, Document } from '../src/rag/types.js';
+import { MockVectorStore } from '../src/rag/mock-vector-store.js';
 
 const vectorStore = new MockVectorStore();
 vectorStore.addDocuments([
@@ -31,7 +31,7 @@ const tools: Tool[] = [
     execute: async (input: string) => {
       const docs = await vectorStore.similaritySearch(input, 2);
       if (docs.length === 0) return "No specific climate information found.";
-      return docs.map(d => `[${d.metadata?.source}] ${d.content}`).join('\n');
+      return docs.map((d: Document) => `[${d.metadata?.source}] ${d.content}`).join('\n');
     }
   }
 ];
