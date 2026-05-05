@@ -1,5 +1,5 @@
 import { runAgentLoop } from '../rag/agent-loop.js';
-import { Document, Tool } from '../rag/types.js';
+import { Document, Tool, Message } from '../rag/types.js';
 import { addClimateDocuments, searchClimateKnowledge } from './knowledge-base.js';
 import { getWeatherSnapshot, WeatherSnapshot } from './bmkg.js';
 import { getDashboardStats, recordContribution, recordQuery } from './dashboard-state.js';
