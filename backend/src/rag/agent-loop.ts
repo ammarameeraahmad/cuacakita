@@ -23,12 +23,18 @@ export async function runAgentLoop(
     .filter(msg => ['system', 'user', 'assistant', 'tool'].includes(msg.role))
     .map(msg => ({ role: msg.role as 'system' | 'user' | 'assistant' | 'tool', content: msg.content }));
 
+  const messages = [
+    { role: 'system', content: AGENTIC_RAG_SYSTEM_PROMPT },
+    ...validHistory, // Include last 5 valid messages as context
+    { role: 'user', content: userTask + userContext }
+  ];
+
+  console.log('=== MESSAGES SENT TO GROQ ===');
+  console.log(JSON.stringify(messages, null, 2));
+  console.log('==============================');
+
   const state: AgentState = {
-    messages: [
-      { role: 'system', content: AGENTIC_RAG_SYSTEM_PROMPT },
-      ...validHistory, // Include last 5 valid messages as context
-      { role: 'user', content: userTask + userContext }
-    ],
+    messages,
     status: 'running',
     maxSteps,
     currentStep: 0
