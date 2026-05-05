@@ -18,8 +18,22 @@ async function request(path, options = {}) {
   return response.json();
 }
 
-export function getWeather(location) {
-  const suffix = location ? `?location=${encodeURIComponent(location)}` : '';
+export function getWeather(params) {
+  if (!params) return request('/weather');
+  if (typeof params === 'string') {
+    const suffix = params ? `?location=${encodeURIComponent(params)}` : '';
+    return request(`/weather${suffix}`);
+  }
+
+  const query = new URLSearchParams();
+  if (params.location) query.set('location', params.location);
+
+  const hintKeys = ['adm4Hint', 'village', 'district', 'city', 'regency', 'province'];
+  hintKeys.forEach((key) => {
+    if (params[key]) query.set(key, params[key]);
+  });
+
+  const suffix = query.toString() ? `?${query.toString()}` : '';
   return request(`/weather${suffix}`);
 }
 
@@ -27,10 +41,10 @@ export function getStats() {
   return request('/stats');
 }
 
-export function sendChat(message, location) {
+export function sendChat(message, location, locationHints = []) {
   return request('/chat', {
     method: 'POST',
-    body: JSON.stringify({ message, location }),
+    body: JSON.stringify({ message, location, locationHints }),
   });
 }
 

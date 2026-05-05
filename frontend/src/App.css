@@ -933,6 +933,15 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  background: linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%);
+}
+
+.chart-card--temperature {
+  background: linear-gradient(180deg, #fff7ee 0%, #ffffff 55%, #f5f9ff 100%);
+}
+
+.chart-card--rain {
+  background: linear-gradient(180deg, #eef6ff 0%, #ffffff 55%, #f7fbff 100%);
 }
 
 .chart-card__header {
@@ -990,6 +999,18 @@
   gap: 8px;
   min-height: 200px;
   padding: 12px 0 8px;
+  position: relative;
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 240, 220, 0.55), rgba(255, 255, 255, 0.6)),
+    repeating-linear-gradient(
+      90deg,
+      rgba(0, 93, 144, 0.04),
+      rgba(0, 93, 144, 0.04) 1px,
+      transparent 1px,
+      transparent 24px
+    );
+  border: 1px solid rgba(0, 93, 144, 0.08);
 }
 
 .temp-bar {
@@ -1059,6 +1080,18 @@
   gap: 10px;
   min-height: 160px;
   padding: 10px 0;
+  position: relative;
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(219, 238, 254, 0.6), rgba(255, 255, 255, 0.7)),
+    repeating-linear-gradient(
+      90deg,
+      rgba(0, 93, 144, 0.04),
+      rgba(0, 93, 144, 0.04) 1px,
+      transparent 1px,
+      transparent 24px
+    );
+  border: 1px solid rgba(0, 93, 144, 0.08);
 }
 
 .rain-bar {
@@ -1353,6 +1386,72 @@
   font-weight: 800;
 }
 
+.profile-location {
+  color: #6b6f76;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.profile-edit-button {
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: 9999px;
+  border: 1px solid #bfc7d1;
+  background: #ffffff;
+  color: #005d90;
+  font-size: 0.95rem;
+  font-weight: 800;
+  box-shadow: 0 0 10px rgba(0, 93, 144, 0.08);
+}
+
+.profile-editor {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 20px;
+  background: #ffffff;
+  border: 1px solid #e0e2e8;
+  box-shadow: 0 0 12px rgba(0, 93, 144, 0.05);
+}
+
+.profile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+
+.profile-field label {
+  color: #404850;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.profile-field input {
+  min-height: 48px;
+  border-radius: 14px;
+  border: 1px solid #bfc7d1;
+  padding: 0 12px;
+  background: #f7f9ff;
+  color: #181c20;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.profile-field--short input {
+  max-width: 120px;
+}
+
+.profile-status {
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: #f1f4f9;
+  border: 1px solid #e0e2e8;
+  color: #404850;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
 .profile-stars {
   display: flex;
   gap: 8px;
@@ -1460,6 +1559,17 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.empty-state {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #f7f9ff;
+  border: 1px dashed #bfc7d1;
+  color: #6b6f76;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-align: center;
 }
 
 .leaderboard-row {

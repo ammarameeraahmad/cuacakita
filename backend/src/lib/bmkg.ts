@@ -1,9 +1,12 @@
 import { getAdm4FromLocation } from './location-lookup.js';
 
 type RawBmkgForecast = {
+  datetime?: string;
+  utc_datetime?: string;
   local_datetime?: string;
   weather_desc?: string;
   t?: string | number;
+  tp?: string | number;
   hu?: string | number;
   ws?: string | number;
   vs_text?: string;
@@ -123,16 +126,42 @@ function parseLocationLabel(location: BmkgApiResponse['lokasi'] | undefined, fal
   return fallbackLabel || FALLBACK_SNAPSHOT.locationLabel;
 }
 
-function flattenForecastGroups(cuaca?: Array<RawBmkgForecast[] | RawBmkgForecast>) {
-  const groups = Array.isArray(cuaca) ? cuaca : [];
-  return groups.flatMap((group) => (Array.isArray(group) ? group : [group]));
+function getLocalDatetime(period: RawBmkgForecast) {
+  return period.local_datetime || period.datetime || period.utc_datetime;
+}
+
+function extractDateKey(localDatetime?: string) {
+  if (!localDatetime) return '';
+  const trimmed = localDatetime.trim();
+
+  if (trimmed.length >= 10 && trimmed.includes('-')) {
+    return trimmed.slice(0, 10);
+  }
+
+  if (trimmed.length >= 8 && /^\d{8}/.test(trimmed)) {
+    return `${trimmed.slice(0, 4)}-${trimmed.slice(4, 6)}-${trimmed.slice(6, 8)}`;
+  }
+
+  return '';
+}
+
+function normalizeForecastGroups(cuaca?: Array<RawBmkgForecast[] | RawBmkgForecast>) {
+  const groups = Array.isArray(cuaca) ? cuaca.map((group) => (Array.isArray(group) ? group : [group])) : [];
+  if (groups.length === 0) return [];
+
+  if (groups.length === 1) {
+    const flattened = groups.flat();
+    const regrouped = groupForecastByDate(flattened);
+    if (regrouped.length > 0) return regrouped;
+  }
+
+  return groups;
 }
 
 function groupForecastByDate(periods: RawBmkgForecast[]) {
   const groups = new Map<string, RawBmkgForecast[]>();
   for (const period of periods) {
-    const rawDate = period.local_datetime || '';
-    const dateKey = rawDate.slice(0, 8) || 'unknown';
+    const dateKey = extractDateKey(getLocalDatetime(period)) || 'unknown';
     const bucket = groups.get(dateKey) || [];
     bucket.push(period);
     groups.set(dateKey, bucket);
@@ -141,12 +170,17 @@ function groupForecastByDate(periods: RawBmkgForecast[]) {
 }
 
 function formatDayFromDatetime(localDatetime?: string, index: number = 0): string {
-  if (!localDatetime || localDatetime.length < 8) {
+  if (!localDatetime) {
     return DAY_NAMES[(new Date().getDay() + index) % DAY_NAMES.length];
   }
-  const year = Number(localDatetime.slice(0, 4));
-  const month = Number(localDatetime.slice(4, 6)) - 1;
-  const day = Number(localDatetime.slice(6, 8));
+  const dateKey = extractDateKey(localDatetime);
+  if (!dateKey) {
+    return DAY_NAMES[(new Date().getDay() + index) % DAY_NAMES.length];
+  }
+  const [yearText, monthText, dayText] = dateKey.split('-');
+  const year = Number(yearText);
+  const month = Number(monthText) - 1;
+  const day = Number(dayText);
   const date = new Date(Date.UTC(year, month, day));
   if (Number.isNaN(date.getTime())) {
     return DAY_NAMES[(new Date().getDay() + index) % DAY_NAMES.length];
@@ -158,18 +192,21 @@ function buildForecast(periodGroups: RawBmkgForecast[][]): WeatherDay[] {
   return periodGroups.slice(0, 5).map((group, index) => {
     const first = group[0] || {};
     const temperatures = group.map((period) => toNumber(period.t, 28));
+    const totalRain = group.reduce((sum, period) => sum + toNumber(period.tp, 0), 0);
     const descriptions = group
       .map((period) => period.weather_desc || '')
       .filter(Boolean);
     const description = descriptions[0] || 'Berawan';
     return {
-      day: DAY_NAMES[(new Date().getDay() + index) % DAY_NAMES.length],
-      label: formatDayFromDatetime(first.local_datetime, index),
+      day: formatDayFromDatetime(getLocalDatetime(first), index),
+      label: formatDayFromDatetime(getLocalDatetime(first), index),
       description,
       icon: weatherEmoji(description),
       high: temperatures.length > 0 ? Math.max(...temperatures) : FALLBACK_SNAPSHOT.current.temperature + index,
       low: temperatures.length > 0 ? Math.min(...temperatures) : FALLBACK_SNAPSHOT.current.temperature - 5 + index,
-      rainChance: Math.max(...group.map((period) => rainChanceFromDescription(period.weather_desc || ''))),
+      rainChance: totalRain > 0
+        ? Math.min(100, Math.round(totalRain * 10))
+        : Math.max(...group.map((period) => rainChanceFromDescription(period.weather_desc || ''))),
     };
   });
 }
@@ -178,21 +215,19 @@ function buildForecast(periodGroups: RawBmkgForecast[][]): WeatherDay[] {
  * Look up ADM4 code from the location database
  * Pairs geolocation result (village/kecamatan name) with the correct BMKG ADM4 code
  */
-function resolveAdm4Code(locationLabel?: string): string {
+function resolveAdm4Code(locationLabel?: string, locationHints: string[] = []): string {
   // Try database lookup first
-  if (locationLabel) {
-    const adm4 = getAdm4FromLocation(locationLabel);
-    if (adm4) {
-      console.log(`[BMKG] Resolved ADM4 for "${locationLabel}" -> ${adm4}`);
-      return adm4;
-    }
+  const adm4 = getAdm4FromLocation(locationLabel || '', locationHints);
+  if (adm4) {
+    console.log(`[BMKG] Resolved ADM4 for "${locationLabel || 'unknown'}" -> ${adm4}`);
+    return adm4;
   }
   // Fallback to env var or default
   return process.env.BMKG_ADM4_CODE || '31.71.01.1001';
 }
 
-export async function getWeatherSnapshot(locationLabel?: string): Promise<WeatherSnapshot> {
-  const adm4Code = resolveAdm4Code(locationLabel);
+export async function getWeatherSnapshot(locationLabel?: string, locationHints: string[] = []): Promise<WeatherSnapshot> {
+  const adm4Code = resolveAdm4Code(locationLabel, locationHints);
   const apiUrl = `https://api.bmkg.go.id/publik/prakiraan-cuaca?adm4=${adm4Code}`;
 
   console.log(`[BMKG] Fetching weather for ADM4: ${adm4Code} (location: "${locationLabel || 'default'}")`);
@@ -209,8 +244,7 @@ export async function getWeatherSnapshot(locationLabel?: string): Promise<Weathe
     }
 
     const payload = (await response.json()) as BmkgApiResponse;
-    const periods = flattenForecastGroups(payload?.data?.[0]?.cuaca);
-    const groupedPeriods = groupForecastByDate(periods);
+    const groupedPeriods = normalizeForecastGroups(payload?.data?.[0]?.cuaca);
 
     if (groupedPeriods.length === 0) {
       throw new Error('BMKG response does not contain forecast data');
@@ -224,7 +258,16 @@ export async function getWeatherSnapshot(locationLabel?: string): Promise<Weathe
     const currentWind = toNumber(currentPeriod.ws, 12);
     const currentVisibility = currentPeriod.vs_text ? Number.parseFloat(String(currentPeriod.vs_text).replace(/[^0-9.]/g, '')) || 8 : 8;
     const location = parseLocationLabel(payload.lokasi, locationLabel || adm4Code);
-    const subLabel = payload.lokasi?.timezone ? `Zona waktu ${payload.lokasi.timezone}` : 'Data resmi BMKG';
+    const timezoneLabel = payload.lokasi?.timezone ? `Zona waktu ${payload.lokasi.timezone}` : 'Data resmi BMKG';
+    const dateLabel = getLocalDatetime(currentPeriod) ? `Update ${getLocalDatetime(currentPeriod)}` : '';
+    const subLabel = dateLabel ? `${timezoneLabel} · ${dateLabel}` : timezoneLabel;
+    const dailyTemperatures = groupedPeriods.map((group) => {
+      const temps = group.map((period) => toNumber(period.t, 0)).filter((value) => Number.isFinite(value));
+      return temps.length > 0 ? Math.max(...temps) : currentTemperature;
+    });
+    const dailyRainfall = groupedPeriods.map((group) =>
+      group.reduce((sum, period) => sum + toNumber(period.tp, 0), 0)
+    );
 
     return {
       source: 'bmkg',
@@ -239,8 +282,8 @@ export async function getWeatherSnapshot(locationLabel?: string): Promise<Weathe
         icon: weatherEmoji(currentDescription),
       },
       forecast,
-      temperatureSeries: forecast.map((entry) => entry.high),
-      rainfallSeries: forecast.map((entry) => entry.rainChance),
+      temperatureSeries: dailyTemperatures.length > 0 ? dailyTemperatures : forecast.map((entry) => entry.high),
+      rainfallSeries: dailyRainfall.length > 0 ? dailyRainfall : forecast.map((entry) => entry.rainChance),
       summary: `${location} diperkirakan ${currentDescription.toLowerCase()} dengan suhu ${currentTemperature}°C.`,
     };
   } catch (error) {

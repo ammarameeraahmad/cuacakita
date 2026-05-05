@@ -108,18 +108,19 @@ export function lookupAdm4Code(locationName: string): string | null {
   return null;
 }
 
-export function getAdm4FromLocation(locationName: string): string | null {
-  // First try direct lookup
-  const adm4 = lookupAdm4Code(locationName);
-  if (adm4) return adm4;
+export function getAdm4FromLocation(locationName: string, hints: string[] = []): string | null {
+  const candidates = [locationName, ...hints].map((value) => value.trim()).filter(Boolean);
 
-  // If locationLabel contains a comma, try the first part (village name)
-  const parts = locationName.split(',');
-  if (parts.length >= 2) {
-    const villageMatch = lookupAdm4Code(parts[0].trim());
-    if (villageMatch) return villageMatch;
+  for (const candidate of candidates) {
+    const adm4 = lookupAdm4Code(candidate);
+    if (adm4) return adm4;
+
+    const parts = candidate.split(',');
+    if (parts.length >= 2) {
+      const villageMatch = lookupAdm4Code(parts[0].trim());
+      if (villageMatch) return villageMatch;
+    }
   }
 
-  // Fallback to env var
   return process.env.BMKG_ADM4_CODE || null;
 }

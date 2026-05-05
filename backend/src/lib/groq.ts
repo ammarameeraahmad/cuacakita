@@ -4,11 +4,7 @@ const GROQ_ENDPOINT = 'https://api.groq.com/openai/v1/chat/completions';
 const DEFAULT_MODEL = process.env.GROQ_MODEL || 'llama-3.1-70b-versatile';
 
 function buildFallbackAnswer(messages: Message[]) {
-  const latestUserMessage = [...messages].reverse().find((message) => message.role === 'user');
-  return (
-    latestUserMessage?.content ||
-    'Maaf, saya belum bisa memproses permintaan itu saat ini karena koneksi AI belum tersedia.'
-  );
+  return 'Maaf, AI sedang tidak tersedia. Silakan coba lagi beberapa saat atau gunakan informasi BMKG di layar.';
 }
 
 export async function callGroqChatCompletion(

@@ -23,6 +23,7 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "ts-node": "^10.9.2",
+    "firebase-admin": "^12.5.0",
     "ts-node-dev": "^2.0.0",
     "typescript": "^6.0.3"
   }

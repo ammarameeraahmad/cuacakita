@@ -12,12 +12,13 @@ app.use(express.json());
 // POST /api/chat
 app.post('/api/chat', async (req, res) => {
   try {
-    const { message, location } = req.body;
+    const { message, location, locationHints } = req.body;
     if (!message) {
       return res.status(400).json({ error: 'Message is required' });
     }
 
-    const response = await createChatResponse(message, location);
+    const hints = Array.isArray(locationHints) ? locationHints.filter(Boolean) : [];
+    const response = await createChatResponse(message, location, hints);
 
     res.json(response);
   } catch (error) {
@@ -30,7 +31,12 @@ app.post('/api/chat', async (req, res) => {
 app.get('/api/weather', async (req, res) => {
   try {
     const location = typeof req.query.location === 'string' ? req.query.location : undefined;
-    res.json(await createWeatherResponse(location));
+    const hintKeys = ['adm4Hint', 'village', 'district', 'city', 'regency', 'province'];
+    const locationHints = hintKeys
+      .map((key) => (typeof req.query[key] === 'string' ? String(req.query[key]) : ''))
+      .filter(Boolean);
+
+    res.json(await createWeatherResponse({ location, locationHints }));
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -49,7 +55,12 @@ app.post('/api/contribute', async (req, res) => {
 
 // GET /api/stats
 app.get('/api/stats', (req, res) => {
-  res.json(getStatsResponse());
+  getStatsResponse()
+    .then((payload) => res.json(payload))
+    .catch((error) => {
+      console.error(error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    });
 });
 
 // Export for Vercel serverless function

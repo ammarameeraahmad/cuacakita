@@ -28,6 +28,15 @@ import {
 import './App.css';
 import { getStats, getWeather, submitContribution, sendChat } from './lib/api.js';
 import { getCurrentPosition, reverseGeocode } from './lib/geolocation.js';
+import {
+  bootstrapRealtimeData,
+  subscribeStats,
+  subscribeProfile,
+  subscribeAchievements,
+  subscribeLeaderboard,
+  updateProfile,
+  isFirebaseEnabled,
+} from './lib/firebase.js';
 
 const tabs = [
   { id: 'beranda', label: 'Beranda', icon: Home },
@@ -52,40 +61,76 @@ const rainIntensity = [
   { label: 'Deras' },
 ];
 
-const achievements = [
+const defaultAchievements = [
   { label: 'Ahli Hujan', emoji: '🌧️', active: true },
   { label: 'Cuaca Cerah', emoji: '☀️' },
   { label: 'Penjaga Lokal', emoji: '📍' },
 ];
 
-const leaderboard = [
+const defaultLeaderboard = [
   { rank: 1, name: 'Pak Budi', reports: '47 Laporan', avatar: '👴' },
   { rank: 2, name: 'Bu Siti', reports: '42 Laporan', avatar: '👩' },
   { rank: 3, name: 'Mas Agus', reports: '38 Laporan', avatar: '👨' },
 ];
 
+const defaultProfile = {
+  displayName: 'Pak Budi',
+  tagline: 'Petani Cuaca Andal',
+  location: 'Sleman, Yogyakarta',
+  avatarInitials: 'PB',
+  rating: 4,
+};
+
+const defaultStats = {
+  totalQueries: 0,
+  totalContributions: 0,
+  acceptedContributions: 0,
+  rejectedContributions: 0,
+  activeUsers: 0,
+  validationScoreSum: 0,
+};
+
+const defaultCommunity = {
+  'stats/global': defaultStats,
+  'community/achievements': defaultAchievements,
+  'community/leaderboard': defaultLeaderboard,
+  'profiles/default': defaultProfile,
+};
+
 const fallbackWeather = {
-  locationLabel: 'Desa Sukamaju, 12 Okt',
-  subLabel: 'Senin, 30 Maret 2024',
+  locationLabel: 'Lokasi belum tersedia',
+  subLabel: 'Menunggu data BMKG',
   current: {
-    temperature: 28,
-    description: 'Hujan Ringan',
-    humidity: 78,
-    windSpeed: 12,
-    visibility: 8,
-    icon: '🌧️',
+    temperature: 0,
+    description: 'Data belum tersedia',
+    humidity: 0,
+    windSpeed: 0,
+    visibility: 0,
+    icon: '☁️',
   },
   forecast: [
-    { day: 'SEN', label: 'Senin', description: 'Hujan Ringan', icon: '🌧️', high: 28, low: 23, rainChance: 70 },
-    { day: 'SEL', label: 'Selasa', description: 'Berawan', icon: '⛅', high: 30, low: 24, rainChance: 40 },
-    { day: 'RAB', label: 'Rabu', description: 'Cerah', icon: '☀️', high: 32, low: 25, rainChance: 10 },
-    { day: 'KAM', label: 'Kamis', description: 'Berawan', icon: '⛅', high: 31, low: 24, rainChance: 35 },
-    { day: 'JUM', label: 'Jumat', description: 'Hujan Ringan', icon: '🌧️', high: 29, low: 23, rainChance: 60 },
+    { day: 'SEN', label: 'Senin', description: 'Menunggu data', icon: '☁️', high: 0, low: 0, rainChance: 0 },
+    { day: 'SEL', label: 'Selasa', description: 'Menunggu data', icon: '☁️', high: 0, low: 0, rainChance: 0 },
+    { day: 'RAB', label: 'Rabu', description: 'Menunggu data', icon: '☁️', high: 0, low: 0, rainChance: 0 },
+    { day: 'KAM', label: 'Kamis', description: 'Menunggu data', icon: '☁️', high: 0, low: 0, rainChance: 0 },
+    { day: 'JUM', label: 'Jumat', description: 'Menunggu data', icon: '☁️', high: 0, low: 0, rainChance: 0 },
   ],
-  temperatureSeries: [28, 30, 32, 31, 29],
-  rainfallSeries: [0, 12, 45, 20, 2],
-  summary: 'Data BMKG belum tersedia, memakai data demo untuk Desa Sukamaju.',
+  temperatureSeries: [0, 0, 0, 0, 0],
+  rainfallSeries: [0, 0, 0, 0, 0],
+  summary: 'Data BMKG belum tersedia. Coba lagi beberapa saat.',
 };
+
+function buildLocationHints(location) {
+  if (!location) return [];
+  return [
+    location.adm4Hint,
+    location.village,
+    location.district,
+    location.city,
+    location.regency,
+    location.province,
+  ].filter(Boolean);
+}
 
 function App() {
   const [activeTab, setActiveTab] = useState('beranda');
@@ -94,13 +139,19 @@ function App() {
   const [activeRange, setActiveRange] = useState('7 Hari');
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationError, setLocationError] = useState('');
+  const [locationContext, setLocationContext] = useState(null);
   const [chatMessages, setChatMessages] = useState([
     { id: 'welcome', role: 'assistant', content: 'Tanya apa saja tentang cuaca di desa kamu.' },
   ]);
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
+  const [profile, setProfile] = useState(null);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileStatus, setProfileStatus] = useState('');
+  const [achievements, setAchievements] = useState(defaultAchievements);
+  const [leaderboard, setLeaderboard] = useState(defaultLeaderboard);
   const [reportState, setReportState] = useState({
-    location: 'Sleman, Yogyakarta',
+    location: defaultProfile.location,
     condition: 'Hujan',
     intensity: 'Sedang',
     temperature: 28,
@@ -108,38 +159,97 @@ function App() {
   });
   const [reportStatus, setReportStatus] = useState('');
   const [reportLoading, setReportLoading] = useState(false);
+  const userId = 'default';
 
   useEffect(() => {
     let cancelled = false;
+    const unsubscribers = [];
+
+    if (isFirebaseEnabled()) {
+      bootstrapRealtimeData(defaultCommunity).catch((error) => {
+        console.warn('Bootstrap realtime data failed:', error);
+      });
+
+      unsubscribers.push(
+        subscribeStats((value) => {
+          if (!cancelled) setStats(value || null);
+        })
+      );
+      unsubscribers.push(
+        subscribeProfile(userId, (value) => {
+          if (!cancelled) setProfile(value || null);
+        })
+      );
+      unsubscribers.push(
+        subscribeAchievements((value) => {
+          if (!cancelled && Array.isArray(value)) setAchievements(value);
+        })
+      );
+      unsubscribers.push(
+        subscribeLeaderboard((value) => {
+          if (!cancelled && Array.isArray(value)) setLeaderboard(value);
+        })
+      );
+    }
+
     const loadData = async () => {
       try {
         // Try to auto-detect location
         let locationName = 'Desa Sukamaju, 12 Okt';
+        let locationHints = {};
         try {
           const position = await getCurrentPosition({ timeout: 5000 });
           const location = await reverseGeocode(position.lat, position.lng);
           if (location.locationLabel) {
             locationName = location.locationLabel;
+            locationHints = {
+              adm4Hint: location.adm4Hint,
+              village: location.village,
+              district: location.district,
+              city: location.city,
+              regency: location.regency,
+              province: location.province,
+            };
+            if (!cancelled) {
+              setLocationContext(location);
+              setLocationError('');
+            }
             if (!cancelled) {
               setReportState((current) => ({ ...current, location: location.locationLabel }));
             }
           }
-        } catch {
+        } catch (error) {
           // Geolocation failed, use default
           console.log('Auto-location failed, using default');
+          if (!cancelled) {
+            setLocationError('Gagal mendapatkan lokasi perangkat. Menggunakan lokasi default.');
+          }
         }
 
-        const [weatherResponse, statsResponse] = await Promise.allSettled([
-          getWeather(locationName),
-          getStats(),
-        ]);
-        if (!cancelled && weatherResponse.status === 'fulfilled') setWeather(weatherResponse.value);
-        if (!cancelled && statsResponse.status === 'fulfilled') setStats(statsResponse.value);
+        const weatherResponse = await getWeather({ location: locationName, ...locationHints });
+        if (!cancelled) setWeather(weatherResponse);
+
+        if (!isFirebaseEnabled()) {
+          const statsResponse = await getStats();
+          if (!cancelled) setStats(statsResponse);
+        }
       } catch (error) { console.error(error); }
     };
     loadData();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      unsubscribers.forEach((unsubscribe) => unsubscribe());
+    };
   }, []);
+
+  useEffect(() => {
+    if (!profile?.location) return;
+    if (locationContext) return;
+    setReportState((current) => ({
+      ...current,
+      location: profile.location || current.location,
+    }));
+  }, [profile?.location, locationContext]);
 
   const handleSendChat = async (message) => {
     const text = message.trim();
@@ -147,7 +257,8 @@ function App() {
     setChatLoading(true);
     setChatMessages((current) => [...current, { id: `user-${Date.now()}`, role: 'user', content: text }]);
     try {
-      const response = await sendChat(text, weather?.locationLabel || 'Desa Sukamaju, 12 Okt');
+      const locationLabel = weather?.locationLabel || locationContext?.locationLabel || reportState.location || 'Desa Sukamaju, 12 Okt';
+      const response = await sendChat(text, locationLabel, buildLocationHints(locationContext));
       setChatMessages((current) => [...current, { id: `assistant-${Date.now()}`, role: 'assistant', content: response.answer }]);
     } catch {
       setChatMessages((current) => [...current, { id: `error-${Date.now()}`, role: 'assistant', content: 'Maaf, AI sedang tidak bisa dihubungi. Coba lagi beberapa saat.' }]);
@@ -165,8 +276,17 @@ function App() {
       const position = await getCurrentPosition();
       const location = await reverseGeocode(position.lat, position.lng);
       setReportState((current) => ({ ...current, location: location.locationLabel }));
+      setLocationContext(location);
       try {
-        const weatherData = await getWeather(location.locationLabel);
+        const weatherData = await getWeather({
+          location: location.locationLabel,
+          adm4Hint: location.adm4Hint,
+          village: location.village,
+          district: location.district,
+          city: location.city,
+          regency: location.regency,
+          province: location.province,
+        });
         setWeather(weatherData);
       } catch {
         setLocationError('Gagal memuat data cuaca untuk lokasi Anda.');
@@ -185,6 +305,7 @@ function App() {
     try {
       const response = await submitContribution({
         location: reportState.location,
+        locationHints: buildLocationHints(locationContext),
         description: `Kondisi ${reportState.condition.toLowerCase()} dengan intensitas ${reportState.intensity.toLowerCase()}`,
         conditions: { temperature: reportState.temperature, general_condition: reportState.condition, rainfall_intensity: reportState.intensity },
       });
@@ -196,6 +317,24 @@ function App() {
     }
   };
 
+  const handleSaveProfile = async (payload) => {
+    if (!isFirebaseEnabled()) {
+      setProfileStatus('Firebase belum dikonfigurasi.');
+      return;
+    }
+    if (profileSaving) return;
+    setProfileSaving(true);
+    setProfileStatus('Menyimpan perubahan...');
+    try {
+      await updateProfile(userId, { ...payload, updatedAt: Date.now() });
+      setProfileStatus('Profil berhasil diperbarui.');
+    } catch {
+      setProfileStatus('Gagal menyimpan profil.');
+    } finally {
+      setProfileSaving(false);
+    }
+  };
+
   return (
     <div className="app-shell">
       <TopBar activeTab={activeTab} weather={weather} locationLoading={locationLoading} locationError={locationError} onUseLocation={handleUseLocation} />
@@ -204,7 +343,18 @@ function App() {
         {activeTab === 'tanya' && <ChatScreen messages={chatMessages} inputValue={chatInput} loading={chatLoading} onInputChange={setChatInput} onSubmit={handleSendChat} />}
         {activeTab === 'laporan' && <ReportScreen weather={weather} reportState={reportState} onChangeReportState={setReportState} onSubmit={handleSubmitReport} status={reportStatus} loading={reportLoading} />}
         {activeTab === 'data' && <DataScreen weather={weather} stats={stats} activeRange={activeRange} onRangeChange={setActiveRange} />}
-        {activeTab === 'profil' && <ProfileScreen stats={stats} weather={weather} />}
+        {activeTab === 'profil' && (
+          <ProfileScreen
+            stats={stats}
+            weather={weather}
+            profile={profile}
+            achievements={achievements}
+            leaderboard={leaderboard}
+            onSaveProfile={handleSaveProfile}
+            saving={profileSaving}
+            status={profileStatus}
+          />
+        )}
       </main>
       <BottomNav activeTab={activeTab} onChange={setActiveTab} />
     </div>
@@ -461,15 +611,15 @@ function DataScreen({ weather, stats, activeRange, onRangeChange }) {
   const rainfall = rainSeries.map((value, index) => {
     const ratio = value / maxRain;
     let tone = 'muted';
-    if (ratio >= 0.75) tone = 'strong';
-    else if (ratio >= 0.45) tone = 'medium';
-    else if (ratio >= 0.15) tone = 'soft';
-    return { label: dayLabels[index] || `H${index + 1}`, value: String(value), ratio, tone, isToday: index === todayIndex, isPeak: index === peakRainIndex && value > 0 };
+    if (value >= 20) tone = 'strong';
+    else if (value >= 10) tone = 'medium';
+    else if (value >= 1) tone = 'soft';
+    return { label: dayLabels[index] || `H${index + 1}`, value: Math.round(value), ratio, tone, isToday: index === todayIndex, isPeak: index === peakRainIndex && value > 0 };
   });
 
-  const totalReports = stats?.totalContributions ?? 128;
-  const accepted = stats?.acceptedContributions ?? 110;
-  const coverage = Math.max(35, Math.min(98, Math.round((accepted / Math.max(totalReports, 1)) * 100)));
+  const totalReports = stats?.totalContributions ?? 0;
+  const accepted = stats?.acceptedContributions ?? 0;
+  const coverage = Math.min(100, Math.round((accepted / Math.max(totalReports, 1)) * 100));
   const ranges = ['7 Hari', '1 Bulan', '1 Tahun'];
 
   return (
@@ -508,7 +658,7 @@ function DataScreen({ weather, stats, activeRange, onRangeChange }) {
           <div className="highlight-card__icon"><Trophy size={20} /></div>
           <div className="highlight-card__label">Laporan Warga</div>
           <div className="highlight-card__value">{totalReports}</div>
-          <div className="highlight-card__hint">Akurasi {Math.round((stats?.avgValidationScore ?? 0.85) * 100)}%</div>
+          <div className="highlight-card__hint">Akurasi {Math.round((stats?.avgValidationScore ?? 0) * 100)}%</div>
         </article>
       </section>
 
@@ -546,7 +696,7 @@ function DataScreen({ weather, stats, activeRange, onRangeChange }) {
         <div className="rain-chart">
           {rainfall.map((bar, index) => (
             <div key={`${bar.label}-${index}`} className="rain-bar">
-              <span className={`rain-bar__value rain-bar__value--${bar.tone}`}>{bar.value}</span>
+              <span className={`rain-bar__value rain-bar__value--${bar.tone}`}>{bar.value}mm</span>
               <div className={`rain-bar__fill rain-bar__fill--${bar.tone} ${bar.isPeak ? 'rain-bar__fill--peak' : ''}`}
                 style={{ height: `${Math.max(6, bar.ratio * 100)}%` }} />
               <span className={`rain-bar__label ${bar.isToday ? 'rain-bar__label--active' : ''}`}>{bar.label}</span>
@@ -555,10 +705,10 @@ function DataScreen({ weather, stats, activeRange, onRangeChange }) {
         </div>
 
         <div className="rain-legend">
-          <span className="rain-legend__item"><span className="rain-legend__dot rain-legend__dot--muted" /> Cerah</span>
-          <span className="rain-legend__item"><span className="rain-legend__dot rain-legend__dot--soft" /> Ringan</span>
-          <span className="rain-legend__item"><span className="rain-legend__dot rain-legend__dot--medium" /> Sedang</span>
-          <span className="rain-legend__item"><span className="rain-legend__dot rain-legend__dot--strong" /> Lebat</span>
+          <span className="rain-legend__item"><span className="rain-legend__dot rain-legend__dot--muted" /> 0 mm</span>
+          <span className="rain-legend__item"><span className="rain-legend__dot rain-legend__dot--soft" /> 1-9 mm</span>
+          <span className="rain-legend__item"><span className="rain-legend__dot rain-legend__dot--medium" /> 10-19 mm</span>
+          <span className="rain-legend__item"><span className="rain-legend__dot rain-legend__dot--strong" /> 20+ mm</span>
         </div>
       </section>
 
@@ -584,20 +734,107 @@ function DataScreen({ weather, stats, activeRange, onRangeChange }) {
   );
 }
 
-function ProfileScreen({ stats, weather }) {
+function ProfileScreen({ stats, weather, profile, achievements, leaderboard, onSaveProfile, saving, status }) {
   const snapshot = weather || fallbackWeather;
-  const statValues = stats || { totalQueries: 450, totalContributions: 1250, acceptedContributions: 1100, rejectedContributions: 150, activeUsers: 300, avgValidationScore: 0.85 };
+  const statValues = stats || {
+    totalQueries: 0,
+    totalContributions: 0,
+    acceptedContributions: 0,
+    rejectedContributions: 0,
+    activeUsers: 0,
+    avgValidationScore: 0,
+  };
+  const safeProfile = profile || defaultProfile;
+  const [editing, setEditing] = useState(false);
+  const [formState, setFormState] = useState({
+    displayName: safeProfile.displayName,
+    tagline: safeProfile.tagline,
+    location: safeProfile.location,
+    avatarInitials: safeProfile.avatarInitials,
+  });
+
+  useEffect(() => {
+    setFormState({
+      displayName: safeProfile.displayName,
+      tagline: safeProfile.tagline,
+      location: safeProfile.location,
+      avatarInitials: safeProfile.avatarInitials,
+    });
+  }, [safeProfile.displayName, safeProfile.tagline, safeProfile.location, safeProfile.avatarInitials]);
+
+  const ratingValue = Math.max(1, Math.min(5, Number(safeProfile.rating || 4)));
 
   return (
     <div className="screen screen--profile">
       <section className="profile-hero">
-        <div className="avatar avatar--profile" aria-hidden="true"><span>PB</span><div className="avatar__badge">✓</div></div>
-        <h2>Pak Budi</h2>
-        <div className="profile-badge">🌾 Petani Cuaca Andal</div>
-        <div className="profile-stars" aria-label="Rating 4 dari 5">
-          {[0, 1, 2, 3, 4].map((index) => <Star key={index} size={18} fill={index < 4 ? 'currentColor' : 'none'} />)}
+        <div className="avatar avatar--profile" aria-hidden="true">
+          <span>{safeProfile.avatarInitials || '??'}</span>
+          <div className="avatar__badge">✓</div>
         </div>
+        <h2>{safeProfile.displayName}</h2>
+        <div className="profile-badge">{safeProfile.tagline}</div>
+        <div className="profile-stars" aria-label={`Rating ${ratingValue} dari 5`}>
+          {[0, 1, 2, 3, 4].map((index) => (
+            <Star key={index} size={18} fill={index < ratingValue ? 'currentColor' : 'none'} />
+          ))}
+        </div>
+        <div className="profile-location">{safeProfile.location || snapshot.locationLabel}</div>
+        <button className="profile-edit-button" type="button" onClick={() => setEditing((value) => !value)}>
+          {editing ? 'Tutup' : 'Ubah Profil'}
+        </button>
       </section>
+
+      {editing ? (
+        <section className="profile-editor">
+          <div className="profile-field">
+            <label>Nama</label>
+            <input
+              type="text"
+              value={formState.displayName}
+              onChange={(event) => setFormState((current) => ({ ...current, displayName: event.target.value }))}
+            />
+          </div>
+          <div className="profile-field">
+            <label>Tagline</label>
+            <input
+              type="text"
+              value={formState.tagline}
+              onChange={(event) => setFormState((current) => ({ ...current, tagline: event.target.value }))}
+            />
+          </div>
+          <div className="profile-field">
+            <label>Lokasi</label>
+            <input
+              type="text"
+              value={formState.location}
+              onChange={(event) => setFormState((current) => ({ ...current, location: event.target.value }))}
+            />
+          </div>
+          <div className="profile-field profile-field--short">
+            <label>Inisial</label>
+            <input
+              type="text"
+              value={formState.avatarInitials}
+              maxLength={3}
+              onChange={(event) => setFormState((current) => ({ ...current, avatarInitials: event.target.value.toUpperCase() }))}
+            />
+          </div>
+          <button
+            className="primary-button"
+            type="button"
+            disabled={saving}
+            onClick={() => onSaveProfile({
+              displayName: formState.displayName,
+              tagline: formState.tagline,
+              location: formState.location,
+              avatarInitials: formState.avatarInitials,
+            })}
+          >
+            {saving ? 'MENYIMPAN...' : 'SIMPAN PROFIL'}
+          </button>
+          {status ? <div className="profile-status">{status}</div> : null}
+        </section>
+      ) : null}
 
       <section className="stats-grid">
         <article className="stat-card stat-card--reports">
@@ -621,7 +858,7 @@ function ProfileScreen({ stats, weather }) {
       <section className="section-block">
         <h3 className="section-title">Pencapaian</h3>
         <div className="achievement-row">
-          {achievements.map((a) => (
+          {(achievements || []).map((a) => (
             <article key={a.label} className={`achievement-card ${a.active ? 'achievement-card--active' : ''}`}>
               <span className="achievement-card__emoji" aria-hidden="true">{a.emoji}</span><span>{a.label}</span>
             </article>
@@ -632,17 +869,21 @@ function ProfileScreen({ stats, weather }) {
       <section className="leaderboard-card">
         <div className="leaderboard-card__title"><Trophy size={22} /><h3>Top Pelapor Minggu Ini - Desamu</h3></div>
         <div className="leaderboard-list">
-          {leaderboard.map((entry) => (
-            <article key={entry.rank} className={`leaderboard-row ${entry.rank === 1 ? 'leaderboard-row--first' : ''}`}>
-              <div className="leaderboard-row__rank">{entry.rank}</div>
-              <div className="leaderboard-row__avatar" aria-hidden="true">{entry.avatar}</div>
-              <div className="leaderboard-row__copy">
-                <div className="leaderboard-row__name">{entry.name}</div>
-                <div className="leaderboard-row__meta">{entry.reports}</div>
-              </div>
-              {entry.rank === 1 ? <Star size={18} /> : null}
-            </article>
-          ))}
+          {(leaderboard || []).length === 0 ? (
+            <div className="empty-state">Belum ada data pelapor minggu ini.</div>
+          ) : (
+            (leaderboard || []).map((entry) => (
+              <article key={entry.rank} className={`leaderboard-row ${entry.rank === 1 ? 'leaderboard-row--first' : ''}`}>
+                <div className="leaderboard-row__rank">{entry.rank}</div>
+                <div className="leaderboard-row__avatar" aria-hidden="true">{entry.avatar}</div>
+                <div className="leaderboard-row__copy">
+                  <div className="leaderboard-row__name">{entry.name}</div>
+                  <div className="leaderboard-row__meta">{entry.reports}</div>
+                </div>
+                {entry.rank === 1 ? <Star size={18} /> : null}
+              </article>
+            ))
+          )}
         </div>
       </section>
     </div>

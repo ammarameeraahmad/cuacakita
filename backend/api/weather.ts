@@ -7,7 +7,11 @@ export default async function handler(req: any, res: any) {
 
   try {
     const location = typeof req.query?.location === 'string' ? req.query.location : undefined;
-    const weather = await createWeatherResponse(location);
+    const hintKeys = ['adm4Hint', 'village', 'district', 'city', 'regency', 'province'];
+    const locationHints = hintKeys
+      .map((key) => (typeof req.query?.[key] === 'string' ? String(req.query[key]) : ''))
+      .filter(Boolean);
+    const weather = await createWeatherResponse({ location, locationHints });
     return res.status(200).json(weather);
   } catch (error) {
     console.error(error);

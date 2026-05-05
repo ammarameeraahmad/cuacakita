@@ -3,6 +3,7 @@ import { Document, Tool } from '../rag/types.js';
 import { addClimateDocuments, searchClimateKnowledge } from './knowledge-base.js';
 import { getWeatherSnapshot, WeatherSnapshot } from './bmkg.js';
 import { getDashboardStats, recordContribution, recordQuery } from './dashboard-state.js';
+import { saveContributionReport } from './reports.js';
 
 function isRainQuestion(message: string) {
   const lower = message.toLowerCase();
@@ -60,12 +61,28 @@ function buildTools(weather: WeatherSnapshot): Tool[] {
   ];
 }
 
-export async function createChatResponse(message: string, location?: string) {
-  recordQuery();
-  const weather = await getWeatherSnapshot(location);
+function buildLocalChatAnswer(weather: WeatherSnapshot, knowledgeHits: Document[]) {
+  const summary = `${weather.locationLabel} saat ini ${weather.current.description.toLowerCase()} dengan suhu ${weather.current.temperature}°C.`;
+  const detail = `Kelembaban ${weather.current.humidity}% dan angin ${weather.current.windSpeed} km/j.`;
+  const forecast = weather.forecast[0]
+    ? `Prakiraan hari ini: ${weather.forecast[0].description.toLowerCase()} (maks ${weather.forecast[0].high}° / min ${weather.forecast[0].low}°).`
+    : '';
+  const knowledge = knowledgeHits.length > 0
+    ? `Info tambahan: ${knowledgeHits.map((doc) => doc.content).slice(0, 2).join(' ')}`
+    : '';
+
+  return [summary, detail, forecast, knowledge].filter(Boolean).join(' ');
+}
+
+export async function createChatResponse(message: string, location?: string, locationHints: string[] = []) {
+  await recordQuery();
+  const weather = await getWeatherSnapshot(location, locationHints);
   const knowledgeHits = await searchClimateKnowledge(message, 3);
   const tools = buildTools(weather);
-  const response = await runAgentLoop(message, tools, 3);
+  const hasGroqKey = Boolean(process.env.GROQ_API_KEY);
+  const response = hasGroqKey
+    ? await runAgentLoop(message, tools, 3)
+    : { finalAnswer: buildLocalChatAnswer(weather, knowledgeHits), conversationHistory: [], totalSteps: 0 };
 
   return {
     answer: response.finalAnswer,
@@ -75,22 +92,23 @@ export async function createChatResponse(message: string, location?: string) {
   };
 }
 
-export async function createWeatherResponse(location?: string) {
-  return getWeatherSnapshot(location);
+export async function createWeatherResponse(input?: { location?: string; locationHints?: string[] }) {
+  return getWeatherSnapshot(input?.location, input?.locationHints ?? []);
 }
 
 export async function createContributionResponse(input: {
   location?: string;
+  locationHints?: string[];
   conditions?: { temperature?: number; general_condition?: string; rainfall_intensity?: string };
   description?: string;
 }) {
-  const weather = await getWeatherSnapshot(input.location);
+  const weather = await getWeatherSnapshot(input.location, input.locationHints ?? []);
   const submittedTemperature = Number(input.conditions?.temperature ?? weather.current.temperature);
   const tempDiff = Math.abs(submittedTemperature - weather.current.temperature);
   const validationScore = Math.max(0, 1 - tempDiff / 10);
   const accepted = tempDiff <= 3;
 
-  recordContribution(accepted, validationScore);
+  await recordContribution(accepted, validationScore);
 
   if (accepted) {
     await addClimateDocuments([
@@ -102,6 +120,14 @@ export async function createContributionResponse(input: {
     ]);
   }
 
+  await saveContributionReport({
+    location: input.location || weather.locationLabel,
+    description: input.description,
+    conditions: input.conditions,
+    status: accepted ? 'ACCEPTED' : 'REJECTED',
+    validationScore: Number(validationScore.toFixed(2)),
+  });
+
   return {
     status: accepted ? 'ACCEPTED' : 'REJECTED',
     message: accepted
@@ -112,6 +138,6 @@ export async function createContributionResponse(input: {
   };
 }
 
-export function getStatsResponse() {
+export async function getStatsResponse() {
   return getDashboardStats();
 }
