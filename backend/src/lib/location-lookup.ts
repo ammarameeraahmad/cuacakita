@@ -168,8 +168,23 @@ export function getAdm4FromLocation(locationName: string, hints: string[] = []):
 
   console.log(`[LocationLookup] Looking up location: "${locationName}", hints: [${hints.join(', ')}]`);
 
+  // Check if any hint indicates Yogyakarta
+  const isYogyakartaContext = hints.some(hint =>
+    ['yogyakarta', 'jogja', 'jogjakarta', 'diy', 'sleman', 'yogyakarta city', 'kota yogyakarta'].includes(
+      normalizeName(hint)
+    )
+  );
+
   for (const candidate of candidates) {
-    const adm4 = lookupAdm4Code(candidate);
+    let adm4 = lookupAdm4Code(candidate);
+    
+    // If we found a match, verify it's in Yogyakarta context if applicable
+    if (adm4 && isYogyakartaContext && !adm4.startsWith('34.')) {
+      // Result is not in Yogyakarta, skip it and continue searching
+      console.log(`[LocationLookup] Found ${adm4} but not in Yogyakarta context, skipping`);
+      adm4 = null;
+    }
+    
     if (adm4) {
       console.log(`[LocationLookup] Found ADM4 ${adm4} for candidate: "${candidate}"`);
       return adm4;
@@ -179,12 +194,17 @@ export function getAdm4FromLocation(locationName: string, hints: string[] = []):
     if (parts.length >= 2) {
       const villageMatch = lookupAdm4Code(parts[0].trim());
       if (villageMatch) {
+        // Same Yogyakarta context check
+        if (isYogyakartaContext && !villageMatch.startsWith('34.')) {
+          console.log(`[LocationLookup] Found ${villageMatch} but not in Yogyakarta context, skipping`);
+          continue;
+        }
         console.log(`[LocationLookup] Found ADM4 ${villageMatch} for village part: "${parts[0].trim()}"`);
         return villageMatch;
       }
     }
   }
 
-  console.log(`[LocationLookup] No match found, using fallback: ${process.env.BMKG_ADM4_CODE || '31.71.01.1001'}`);
-  return process.env.BMKG_ADM4_CODE || '31.71.01.1001'; // Default to Gambir if nothing found
+  console.log(`[LocationLookup] No match found, using fallback: ${process.env.BMKG_ADM4_CODE || '34.04.13.2001'}`);
+  return process.env.BMKG_ADM4_CODE || '34.04.13.2001'; // Default to Sleman, Yogyakarta
 }

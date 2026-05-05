@@ -223,7 +223,7 @@ function resolveAdm4Code(locationLabel?: string, locationHints: string[] = []): 
     return adm4;
   }
   // Fallback to env var or default
-  return process.env.BMKG_ADM4_CODE || '31.71.01.1001';
+  return process.env.BMKG_ADM4_CODE || '34.04.13.2001';
 }
 
 export async function getWeatherSnapshot(locationLabel?: string, locationHints: string[] = []): Promise<WeatherSnapshot> {

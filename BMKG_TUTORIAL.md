@@ -26,7 +26,7 @@ Buat file `backend/.env` (tidak wajib, cukup untuk fallback):
 PORT=3001
 
 # ── BMKG (FALLBACK, otomatis jika database tidak menemukan) ──
-# BMKG_ADM4_CODE=31.71.01.1001
+# BMKG_ADM4_CODE=34.04.13.2001
 ```
 
 ### 2. Database Lokasi

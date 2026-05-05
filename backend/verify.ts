@@ -1,0 +1,1 @@
+﻿import { getAdm4FromLocation } from './src/lib/location-lookup.ts'; console.log('Test 1 - Sleman:', getAdm4FromLocation('Sleman', ['Jogja'])); console.log('Test 2 - Yogyakarta:', getAdm4FromLocation('Yogyakarta', [])); console.log('Test 3 - Fallback:', getAdm4FromLocation('XYZ Unknown', []));
