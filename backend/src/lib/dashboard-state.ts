@@ -41,7 +41,7 @@ async function updateStats(mutator: (draft: DashboardState) => void) {
   }
 
   const ref = db.ref('stats/global');
-  const result = await ref.transaction((current) => {
+  const result = await ref.transaction((current: any) => {
     const next = coerceState(current as DashboardState | null | undefined);
     mutator(next);
     return next;

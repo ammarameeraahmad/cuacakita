@@ -27,7 +27,7 @@ export function isFirebaseConfigured() {
   return Boolean(config.projectId && config.clientEmail && config.privateKey && config.databaseURL);
 }
 
-export function getFirebaseDb() {
+export function getFirebaseDb(): admin.database.Database | null {
   if (!isFirebaseConfigured()) return null;
 
   if (!firebaseApp) {
