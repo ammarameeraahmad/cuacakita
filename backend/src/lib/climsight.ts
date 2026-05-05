@@ -84,10 +84,13 @@ export async function createChatResponse(message: string, location?: string, loc
     ? await runAgentLoop(message, tools, 3)
     : { finalAnswer: buildLocalChatAnswer(weather, knowledgeHits), conversationHistory: [], totalSteps: 0 };
 
+  const cta = buildCta(message);
+  const ctaText = cta.prompt ? `\n\n${cta.prompt}` : '';
+
   return {
-    answer: response.finalAnswer,
+    answer: `${response.finalAnswer}${ctaText}`,
     sources: buildSources(weather, knowledgeHits),
-    cta: buildCta(message),
+    cta: cta,
     weather,
   };
 }

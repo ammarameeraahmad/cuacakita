@@ -155,7 +155,27 @@
   margin: 0 auto;
 }
 
-.screen--chat,
+.screen--chat {
+  gap: 18px;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 120px); /* Adjust for top bar and nav */
+}
+
+.screen--chat .chat-thread {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 20px;
+}
+
+.screen--chat .composer {
+  position: sticky;
+  bottom: 0;
+  background: #f7f9ff;
+  padding: 12px 0;
+  margin-top: auto;
+}
+
 .screen--report,
 .screen--data,
 .screen--profile {
