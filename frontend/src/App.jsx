@@ -37,27 +37,19 @@ const tabs = [
   { id: 'profil', label: 'Profil', icon: UserRound },
 ];
 
-const forecastDays = [
-  { day: 'SEN', icon: CloudRain, high: '28°', low: '23°' },
-  { day: 'SEL', icon: CloudSun, high: '30°', low: '24°' },
-  { day: 'RAB', icon: SunMedium, high: '32°', low: '25°' },
-  { day: 'KAM', icon: CloudSun, high: '31°', low: '24°' },
-  { day: 'JUM', icon: CloudRain, high: '29°', low: '23°' },
-];
-
 const weatherOptions = [
   { label: 'Cerah', emoji: '☀️' },
   { label: 'Berawan', emoji: '⛅' },
-  { label: 'Hujan', emoji: '🌧️', active: true },
+  { label: 'Hujan', emoji: '🌧️' },
   { label: 'Badai', emoji: '⛈️' },
   { label: 'Kabut', emoji: '🌫️' },
   { label: 'Berangin', emoji: '💨' },
 ];
 
 const rainIntensity = [
-  { label: 'Gerimis', active: false },
-  { label: 'Sedang', active: true },
-  { label: 'Deras', active: false },
+  { label: 'Gerimis' },
+  { label: 'Sedang' },
+  { label: 'Deras' },
 ];
 
 const achievements = [
@@ -95,36 +87,6 @@ const fallbackWeather = {
   summary: 'Data BMKG belum tersedia, memakai data demo untuk Desa Sukamaju.',
 };
 
-function buildTemperatureGeometry(values) {
-  const safeValues = values && values.length >= 2 ? values : [28, 30, 32, 31, 29];
-  const maxValue = Math.max(...safeValues);
-  const minValue = Math.min(...safeValues);
-  const range = Math.max(maxValue - minValue, 1);
-  const step = 100 / (safeValues.length - 1);
-  const padTop = 18;
-  const padBottom = 82;
-  const points = safeValues.map((value, index) => {
-    const x = index * step;
-    const y = padBottom - ((value - minValue) / range) * (padBottom - padTop);
-    return { x, y, value };
-  });
-
-  let linePath = `M${points[0].x},${points[0].y}`;
-  for (let index = 1; index < points.length; index += 1) {
-    const previous = points[index - 1];
-    const current = points[index];
-    const midX = (previous.x + current.x) / 2;
-    linePath += ` Q${midX},${previous.y} ${current.x},${current.y}`;
-  }
-
-  const areaPath = `${linePath} L${points[points.length - 1].x},100 L${points[0].x},100 Z`;
-
-  const maxIndex = safeValues.indexOf(maxValue);
-  const minIndex = safeValues.indexOf(minValue);
-
-  return { points, linePath, areaPath, maxIndex, minIndex, maxValue, minValue };
-}
-
 function App() {
   const [activeTab, setActiveTab] = useState('beranda');
   const [weather, setWeather] = useState(null);
@@ -132,13 +94,8 @@ function App() {
   const [activeRange, setActiveRange] = useState('7 Hari');
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationError, setLocationError] = useState('');
-  const [userLocation, setUserLocation] = useState(null);
   const [chatMessages, setChatMessages] = useState([
-    {
-      id: 'welcome',
-      role: 'assistant',
-      content: 'Tanya apa saja tentang cuaca di desa kamu.',
-    },
+    { id: 'welcome', role: 'assistant', content: 'Tanya apa saja tentang cuaca di desa kamu.' },
   ]);
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
@@ -154,62 +111,46 @@ function App() {
 
   useEffect(() => {
     let cancelled = false;
-
     const loadData = async () => {
       try {
+        // Try to auto-detect location
+        let locationName = 'Desa Sukamaju, 12 Okt';
+        try {
+          const position = await getCurrentPosition({ timeout: 5000 });
+          const location = await reverseGeocode(position.lat, position.lng);
+          if (location.locationLabel) {
+            locationName = location.locationLabel;
+            if (!cancelled) {
+              setReportState((current) => ({ ...current, location: location.locationLabel }));
+            }
+          }
+        } catch {
+          // Geolocation failed, use default
+          console.log('Auto-location failed, using default');
+        }
+
         const [weatherResponse, statsResponse] = await Promise.allSettled([
-          getWeather('Desa Sukamaju, 12 Okt'),
+          getWeather(locationName),
           getStats(),
         ]);
-
-        if (!cancelled && weatherResponse.status === 'fulfilled') {
-          setWeather(weatherResponse.value);
-        }
-
-        if (!cancelled && statsResponse.status === 'fulfilled') {
-          setStats(statsResponse.value);
-        }
-      } catch (error) {
-        console.error(error);
-      }
+        if (!cancelled && weatherResponse.status === 'fulfilled') setWeather(weatherResponse.value);
+        if (!cancelled && statsResponse.status === 'fulfilled') setStats(statsResponse.value);
+      } catch (error) { console.error(error); }
     };
-
     loadData();
-
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
   const handleSendChat = async (message) => {
     const text = message.trim();
-
-    if (!text || chatLoading) {
-      return;
-    }
-
+    if (!text || chatLoading) return;
     setChatLoading(true);
-    setChatMessages((current) => [
-      ...current,
-      { id: `user-${Date.now()}`, role: 'user', content: text },
-    ]);
-
+    setChatMessages((current) => [...current, { id: `user-${Date.now()}`, role: 'user', content: text }]);
     try {
       const response = await sendChat(text, weather?.locationLabel || 'Desa Sukamaju, 12 Okt');
-      setChatMessages((current) => [
-        ...current,
-        { id: `assistant-${Date.now()}`, role: 'assistant', content: response.answer },
-      ]);
-    } catch (error) {
-      console.error(error);
-      setChatMessages((current) => [
-        ...current,
-        {
-          id: `error-${Date.now()}`,
-          role: 'assistant',
-          content: 'Maaf, AI sedang tidak bisa dihubungi. Coba lagi beberapa saat.',
-        },
-      ]);
+      setChatMessages((current) => [...current, { id: `assistant-${Date.now()}`, role: 'assistant', content: response.answer }]);
+    } catch {
+      setChatMessages((current) => [...current, { id: `error-${Date.now()}`, role: 'assistant', content: 'Maaf, AI sedang tidak bisa dihubungi. Coba lagi beberapa saat.' }]);
     } finally {
       setChatLoading(false);
       setChatInput('');
@@ -220,25 +161,17 @@ function App() {
     if (locationLoading) return;
     setLocationLoading(true);
     setLocationError('');
-
     try {
       const position = await getCurrentPosition();
       const location = await reverseGeocode(position.lat, position.lng);
-      setUserLocation(location);
-
-      // Update report location too
       setReportState((current) => ({ ...current, location: location.locationLabel }));
-
-      // Reload weather for the new location
       try {
         const weatherData = await getWeather(location.locationLabel);
         setWeather(weatherData);
-      } catch (err) {
-        console.error('Gagal memuat cuaca untuk lokasi:', err);
+      } catch {
         setLocationError('Gagal memuat data cuaca untuk lokasi Anda.');
       }
     } catch (error) {
-      console.error(error);
       setLocationError(error.message);
     } finally {
       setLocationLoading(false);
@@ -246,27 +179,17 @@ function App() {
   }, [locationLoading]);
 
   const handleSubmitReport = async () => {
-    if (reportLoading) {
-      return;
-    }
-
+    if (reportLoading) return;
     setReportLoading(true);
     setReportStatus('Mengirim laporan...');
-
     try {
       const response = await submitContribution({
         location: reportState.location,
         description: `Kondisi ${reportState.condition.toLowerCase()} dengan intensitas ${reportState.intensity.toLowerCase()}`,
-        conditions: {
-          temperature: reportState.temperature,
-          general_condition: reportState.condition,
-          rainfall_intensity: reportState.intensity,
-        },
+        conditions: { temperature: reportState.temperature, general_condition: reportState.condition, rainfall_intensity: reportState.intensity },
       });
-
       setReportStatus(response.message);
-    } catch (error) {
-      console.error(error);
+    } catch {
       setReportStatus('Gagal mengirim laporan.');
     } finally {
       setReportLoading(false);
@@ -275,44 +198,12 @@ function App() {
 
   return (
     <div className="app-shell">
-      <TopBar
-        activeTab={activeTab}
-        weather={weather}
-        locationLoading={locationLoading}
-        locationError={locationError}
-        onUseLocation={handleUseLocation}
-      />
+      <TopBar activeTab={activeTab} weather={weather} locationLoading={locationLoading} locationError={locationError} onUseLocation={handleUseLocation} />
       <main className="app-content">
-        {activeTab === 'beranda' && (
-          <HomeScreen
-            weather={weather}
-            locationLoading={locationLoading}
-            locationError={locationError}
-            onUseLocation={handleUseLocation}
-          />
-        )}
-        {activeTab === 'tanya' && (
-          <ChatScreen
-            messages={chatMessages}
-            inputValue={chatInput}
-            loading={chatLoading}
-            onInputChange={setChatInput}
-            onSubmit={handleSendChat}
-          />
-        )}
-        {activeTab === 'laporan' && (
-          <ReportScreen
-            weather={weather}
-            reportState={reportState}
-            onChangeReportState={setReportState}
-            onSubmit={handleSubmitReport}
-            status={reportStatus}
-            loading={reportLoading}
-          />
-        )}
-        {activeTab === 'data' && (
-          <DataScreen weather={weather} stats={stats} activeRange={activeRange} onRangeChange={setActiveRange} />
-        )}
+        {activeTab === 'beranda' && <HomeScreen weather={weather} locationLoading={locationLoading} locationError={locationError} onUseLocation={handleUseLocation} />}
+        {activeTab === 'tanya' && <ChatScreen messages={chatMessages} inputValue={chatInput} loading={chatLoading} onInputChange={setChatInput} onSubmit={handleSendChat} />}
+        {activeTab === 'laporan' && <ReportScreen weather={weather} reportState={reportState} onChangeReportState={setReportState} onSubmit={handleSubmitReport} status={reportStatus} loading={reportLoading} />}
+        {activeTab === 'data' && <DataScreen weather={weather} stats={stats} activeRange={activeRange} onRangeChange={setActiveRange} />}
         {activeTab === 'profil' && <ProfileScreen stats={stats} weather={weather} />}
       </main>
       <BottomNav activeTab={activeTab} onChange={setActiveTab} />
@@ -320,130 +211,84 @@ function App() {
   );
 }
 
-function TopBar({ activeTab, weather, locationLoading, locationError, onUseLocation }) {
+function TopBar({ activeTab, weather, locationLoading, onUseLocation }) {
   const isChat = activeTab === 'tanya';
   const isReport = activeTab === 'laporan';
   const activeWeather = weather || fallbackWeather;
 
-  if (isReport) {
-    return (
-      <header className="top-bar top-bar--report">
-        <div className="top-bar__row top-bar__row--location">
-          <div className="top-bar__title-group">
-            <div className="top-bar__icon top-bar__icon--report">📡</div>
-            <div>
-              <h1 className="top-bar__title">Laporkan Cuaca Sekarang</h1>
-              <p className="top-bar__subtitle">Bantu warga lain dengan info cuaca nyata!</p>
-            </div>
+  if (isReport) return (
+    <header className="top-bar top-bar--report">
+      <div className="top-bar__row top-bar__row--location">
+        <div className="top-bar__title-group">
+          <div className="top-bar__icon top-bar__icon--report">📡</div>
+          <div>
+            <h1 className="top-bar__title">Laporkan Cuaca Sekarang</h1>
+            <p className="top-bar__subtitle">Bantu warga lain dengan info cuaca nyata!</p>
           </div>
         </div>
-      </header>
-    );
-  }
+      </div>
+    </header>
+  );
 
-  if (isChat) {
-    return (
-      <header className="top-bar top-bar--chat">
-        <div className="top-bar__row">
-          <div className="top-bar__title-group">
-            <div className="top-bar__icon top-bar__icon--robot">
-              <Bot size={28} strokeWidth={2.3} />
-            </div>
-            <div>
-              <h1 className="top-bar__title">Tanya ClimSight</h1>
-              <p className="top-bar__subtitle top-bar__subtitle--online">
-                <span className="status-dot" /> Online
-              </p>
-            </div>
+  if (isChat) return (
+    <header className="top-bar top-bar--chat">
+      <div className="top-bar__row">
+        <div className="top-bar__title-group">
+          <div className="top-bar__icon top-bar__icon--robot"><Bot size={28} strokeWidth={2.3} /></div>
+          <div>
+            <h1 className="top-bar__title">Tanya ClimSight</h1>
+            <p className="top-bar__subtitle top-bar__subtitle--online"><span className="status-dot" /> Online</p>
           </div>
-          <button className="icon-button" type="button" aria-label="Menu lainnya">
-            <MoreVertical size={24} />
-          </button>
         </div>
-      </header>
-    );
-  }
+        <button className="icon-button" type="button" aria-label="Menu lainnya"><MoreVertical size={24} /></button>
+      </div>
+    </header>
+  );
 
   return (
-    <header className={`top-bar ${isReport ? 'top-bar--report' : ''}`}>
+    <header className="top-bar">
       <div className="top-bar__row top-bar__row--location">
         <div className="top-bar__title-group">
           <MapPin className="top-bar__location-icon" size={22} />
           <div>
             <h1 className="top-bar__title">{activeWeather.locationLabel}</h1>
-            {!isReport && <p className="top-bar__subtitle">{activeWeather.subLabel}</p>}
+            <p className="top-bar__subtitle">{activeWeather.subLabel}</p>
           </div>
         </div>
-        {!isReport ? (
-          <button
-            className={`locate-btn ${locationLoading ? 'locate-btn--loading' : ''}`}
-            type="button"
-            onClick={onUseLocation}
-            disabled={locationLoading}
-            aria-label="Gunakan lokasi saya"
-            title="Gunakan lokasi saya"
-          >
-            {locationLoading ? (
-              <span className="locate-btn__spinner" />
-            ) : (
-              <Navigation size={20} strokeWidth={2.3} />
-            )}
-          </button>
-        ) : null}
+        <button className={`locate-btn ${locationLoading ? 'locate-btn--loading' : ''}`} type="button" onClick={onUseLocation} disabled={locationLoading} aria-label="Gunakan lokasi saya" title="Gunakan lokasi saya">
+          {locationLoading ? <span className="locate-btn__spinner" /> : <Navigation size={20} strokeWidth={2.3} />}
+        </button>
       </div>
     </header>
   );
 }
 
-function HomeScreen({ weather, locationLoading, locationError, onUseLocation }) {
+function HomeScreen({ weather, locationLoading, locationError }) {
   const snapshot = weather || fallbackWeather;
 
   return (
     <div className="screen screen--home">
       {locationError ? (
-        <div className="location-status location-status--error">
-          <span className="location-status__icon">⚠️</span>
-          <span>{locationError}</span>
-        </div>
+        <div className="location-status location-status--error"><span className="location-status__icon">⚠️</span><span>{locationError}</span></div>
       ) : locationLoading ? (
-        <div className="location-status location-status--loading">
-          <span className="location-status__icon">📍</span>
-          <span>Mendapatkan lokasi Anda...</span>
-        </div>
+        <div className="location-status location-status--loading"><span className="location-status__icon">📍</span><span>Mendapatkan lokasi Anda...</span></div>
       ) : null}
 
       <section className="hero-card">
         <div className="hero-card__copy">
           <div className="hero-card__temp">{snapshot.current.temperature}°C</div>
-          <div className="hero-pill">
-            {snapshot.current.description.toUpperCase()} <span aria-hidden="true">{snapshot.current.icon}</span>
-          </div>
+          <div className="hero-pill">{snapshot.current.description.toUpperCase()} <span aria-hidden="true">{snapshot.current.icon}</span></div>
         </div>
         <div className="hero-card__art" aria-hidden="true">
           <div className="hero-card__art-window">
-            <div className="hero-cloud hero-cloud--big" />
-            <div className="hero-cloud hero-cloud--small" />
-            <div className="hero-rain hero-rain--one" />
-            <div className="hero-rain hero-rain--two" />
-            <div className="hero-rain hero-rain--three" />
+            <div className="hero-cloud hero-cloud--big" /><div className="hero-cloud hero-cloud--small" />
+            <div className="hero-rain hero-rain--one" /><div className="hero-rain hero-rain--two" /><div className="hero-rain hero-rain--three" />
           </div>
         </div>
         <div className="metrics-grid">
-          <article className="metric-card">
-            <Droplets className="metric-card__icon" size={28} />
-            <h2>Kelembaban</h2>
-            <p>{snapshot.current.humidity}%</p>
-          </article>
-          <article className="metric-card">
-            <Wind className="metric-card__icon" size={28} />
-            <h2>Angin</h2>
-            <p>{snapshot.current.windSpeed} km/j</p>
-          </article>
-          <article className="metric-card">
-            <Eye className="metric-card__icon" size={28} />
-            <h2>Jarak pandang</h2>
-            <p>{snapshot.current.visibility} km</p>
-          </article>
+          <article className="metric-card"><Droplets className="metric-card__icon" size={28} /><h2>Kelembaban</h2><p>{snapshot.current.humidity}%</p></article>
+          <article className="metric-card"><Wind className="metric-card__icon" size={28} /><h2>Angin</h2><p>{snapshot.current.windSpeed} km/j</p></article>
+          <article className="metric-card"><Eye className="metric-card__icon" size={28} /><h2>Jarak pandang</h2><p>{snapshot.current.visibility} km</p></article>
         </div>
       </section>
 
@@ -454,39 +299,9 @@ function HomeScreen({ weather, locationLoading, locationError, onUseLocation }) 
             <article key={day} className="forecast-card">
               <span className="forecast-card__day">{day}</span>
               <span className="forecast-card__icon" aria-hidden="true">{icon}</span>
-              <div className="forecast-card__temps">
-                <span>{high}</span>
-                <span>{low}</span>
-              </div>
+              <div className="forecast-card__temps"><span>{high}°</span><span>{low}°</span></div>
             </article>
           ))}
-        </div>
-      </section>
-
-      <section className="advice-card">
-        <div className="advice-card__header">
-          <div className="advice-card__badge">🚜</div>
-          <div>
-            <p className="advice-card__lead">✔ Hari ini cocok untuk menyiram tanaman pagi hari</p>
-          </div>
-        </div>
-
-        <div className="action-list">
-          <button className="action-row action-row--positive" type="button">
-            <span className="action-row__emoji">🌾</span>
-            <span>Tanam</span>
-            <ThumbsUp size={26} />
-          </button>
-          <button className="action-row action-row--negative" type="button">
-            <span className="action-row__emoji">💊</span>
-            <span>Semprot</span>
-            <ThumbsDown size={26} />
-          </button>
-          <button className="action-row action-row--positive" type="button">
-            <span className="action-row__emoji">🚜</span>
-            <span>Bajak</span>
-            <ThumbsUp size={26} />
-          </button>
         </div>
       </section>
     </div>
@@ -506,8 +321,7 @@ function ChatScreen({ messages, inputValue, loading, onInputChange, onSubmit }) 
       <div className="chip-row chip-row--chat">
         {prompts.map((prompt) => (
           <button key={prompt.label} className="chip" type="button" onClick={() => onSubmit(prompt.label)}>
-            <span className="chip__emoji" aria-hidden="true">{prompt.emoji}</span>
-            <span>{prompt.label}</span>
+            <span className="chip__emoji" aria-hidden="true">{prompt.emoji}</span><span>{prompt.label}</span>
           </button>
         ))}
       </div>
@@ -515,14 +329,10 @@ function ChatScreen({ messages, inputValue, loading, onInputChange, onSubmit }) 
       <div className="chat-thread">
         {messages.map((message) =>
           message.role === 'user' ? (
-            <div key={message.id} className="chat-bubble chat-bubble--user">
-              {message.content}
-            </div>
+            <div key={message.id} className="chat-bubble chat-bubble--user">{message.content}</div>
           ) : (
             <div key={message.id} className="chat-message-row">
-              <div className="bot-avatar" aria-hidden="true">
-                <Bot size={28} />
-              </div>
+              <div className="bot-avatar" aria-hidden="true"><Bot size={28} /></div>
               <div className="chat-bubble chat-bubble--bot">{message.content}</div>
             </div>
           )
@@ -530,72 +340,20 @@ function ChatScreen({ messages, inputValue, loading, onInputChange, onSubmit }) 
 
         {loading ? (
           <div className="chat-message-row">
-            <div className="bot-avatar" aria-hidden="true">
-              <Bot size={28} />
-            </div>
+            <div className="bot-avatar" aria-hidden="true"><Bot size={28} /></div>
             <div className="chat-bubble chat-bubble--bot">Sedang menganalisis data BMKG dan pengetahuan cuaca...</div>
           </div>
         ) : null}
-
-        <section className="confirm-card">
-          <div className="confirm-card__title">
-            <MapPin size={20} />
-            <span>Bantu Konfirmasi!</span>
-          </div>
-          <p className="confirm-card__question">Bagaimana cuaca di lokasi Anda sekarang?</p>
-
-          <div className="weather-grid">
-            {weatherOptions.map((option) => (
-              <button
-                key={option.label}
-                className={`weather-tile ${option.active ? 'weather-tile--active' : ''}`}
-                type="button"
-              >
-                <span aria-hidden="true">{option.emoji}</span>
-                <span>{option.label}</span>
-              </button>
-            ))}
-          </div>
-
-          <div className="divider" />
-
-          <div className="section-subtitle">Intensitas Hujan</div>
-          <div className="pill-row">
-            {rainIntensity.map((item) => (
-              <button
-                key={item.label}
-                className={`pill-option ${item.active ? 'pill-option--active' : ''}`}
-                type="button"
-              >
-                <span aria-hidden="true">💧</span>
-                {item.label}
-              </button>
-            ))}
-          </div>
-        </section>
       </div>
 
       <div className="composer">
-        <button className="composer__mic" type="button" aria-label="Rekam suara">
-          <Mic size={24} />
-        </button>
+        <button className="composer__mic" type="button" aria-label="Rekam suara"><Mic size={24} /></button>
         <label className="composer__field">
-          <input
-            type="text"
-            placeholder="Ketik atau tekan mic..."
-            value={inputValue}
+          <input type="text" placeholder="Ketik atau tekan mic..." value={inputValue}
             onChange={(event) => onInputChange(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                event.preventDefault();
-                onSubmit(inputValue);
-              }
-            }}
-          />
+            onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); onSubmit(inputValue); } }} />
         </label>
-        <button className="composer__send" type="button" aria-label="Kirim pesan" onClick={() => onSubmit(inputValue)}>
-          <Send size={22} />
-        </button>
+        <button className="composer__send" type="button" aria-label="Kirim pesan" onClick={() => onSubmit(inputValue)}><Send size={22} /></button>
       </div>
     </div>
   );
@@ -624,27 +382,17 @@ function ReportScreen({ weather, reportState, onChangeReportState, onSubmit, sta
           <div className="map-pin" aria-hidden="true">📍</div>
           <div className="map-label">{reportState.location || snapshot.locationLabel}</div>
         </div>
-        <button
-          className="primary-button"
-          type="button"
-          onClick={() => onChangeReportState((current) => ({ ...current, location: snapshot.locationLabel }))}
-        >
-          Gunakan Lokasi Saya <span aria-hidden="true">📍</span>
-        </button>
       </section>
 
       <section className="report-card">
         <h3>Langkah 2: Kondisi</h3>
         <div className="weather-grid weather-grid--report">
           {weatherOptions.map((option) => (
-            <button
-              key={option.label}
+            <button key={option.label}
               className={`weather-tile weather-tile--report ${reportState.condition === option.label ? 'weather-tile--active' : ''}`}
               type="button"
-              onClick={() => onChangeReportState((current) => ({ ...current, condition: option.label }))}
-            >
-              <span aria-hidden="true">{option.emoji}</span>
-              <span>{option.label}</span>
+              onClick={() => onChangeReportState((current) => ({ ...current, condition: option.label }))}>
+              <span aria-hidden="true">{option.emoji}</span><span>{option.label}</span>
             </button>
           ))}
         </div>
@@ -653,14 +401,11 @@ function ReportScreen({ weather, reportState, onChangeReportState, onSubmit, sta
           <div className="selector-card__title">Intensitas Hujan:</div>
           <div className="pill-row">
             {rainIntensity.map((item) => (
-              <button
-                key={item.label}
+              <button key={item.label}
                 className={`pill-option ${reportState.intensity === item.label ? 'pill-option--active' : ''}`}
                 type="button"
-                onClick={() => onChangeReportState((current) => ({ ...current, intensity: item.label }))}
-              >
-                <span aria-hidden="true">💧</span>
-                {item.label}
+                onClick={() => onChangeReportState((current) => ({ ...current, intensity: item.label }))}>
+                <span aria-hidden="true">💧</span>{item.label}
               </button>
             ))}
           </div>
@@ -669,21 +414,13 @@ function ReportScreen({ weather, reportState, onChangeReportState, onSubmit, sta
         <div className="selector-card selector-card--temperature">
           <div className="selector-card__title">Suhu:</div>
           <div className="temperature-control">
-            <button
-              className="round-control"
-              type="button"
-              aria-label="Kurangi suhu"
-              onClick={() => onChangeReportState((current) => ({ ...current, temperature: Math.max(16, current.temperature - 1) }))}
-            >
+            <button className="round-control" type="button" aria-label="Kurangi suhu"
+              onClick={() => onChangeReportState((current) => ({ ...current, temperature: Math.max(16, current.temperature - 1) }))}>
               <Minus size={24} />
             </button>
             <div className="temperature-control__value">{reportState.temperature}°C</div>
-            <button
-              className="round-control"
-              type="button"
-              aria-label="Tambah suhu"
-              onClick={() => onChangeReportState((current) => ({ ...current, temperature: Math.min(45, current.temperature + 1) }))}
-            >
+            <button className="round-control" type="button" aria-label="Tambah suhu"
+              onClick={() => onChangeReportState((current) => ({ ...current, temperature: Math.min(45, current.temperature + 1) }))}>
               <Plus size={24} />
             </button>
           </div>
@@ -691,7 +428,6 @@ function ReportScreen({ weather, reportState, onChangeReportState, onSubmit, sta
       </section>
 
       {status ? <div className="report-status">{status}</div> : null}
-
       <button className="submit-button" type="button" onClick={onSubmit} disabled={loading}>
         {loading ? 'MENGIRIM...' : 'KIRIM LAPORAN'}
       </button>
@@ -701,44 +437,39 @@ function ReportScreen({ weather, reportState, onChangeReportState, onSubmit, sta
 
 function DataScreen({ weather, stats, activeRange, onRangeChange }) {
   const snapshot = weather || fallbackWeather;
-  const tempGeo = buildTemperatureGeometry(snapshot.temperatureSeries);
-  const rainSeries = snapshot.rainfallSeries && snapshot.rainfallSeries.length
-    ? snapshot.rainfallSeries
-    : [0, 12, 45, 20, 2];
-  const maxRain = Math.max(...rainSeries, 1);
-  const totalRain = rainSeries.reduce((acc, value) => acc + value, 0);
-  const peakRainIndex = rainSeries.indexOf(Math.max(...rainSeries));
   const dayLabels = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
-  const todayIndex = Math.min(2, rainSeries.length - 1);
 
+  // ── Temperature bars ──
+  const temps = snapshot.forecast.map((day, i) => ({ label: day.day, high: day.high, low: day.low, isToday: i === 2 }));
+  const allTemps = [...snapshot.temperatureSeries, ...snapshot.forecast.map((d) => d.low)];
+  const maxTemp = Math.max(...allTemps, 30);
+  const minTemp = Math.min(...allTemps, 20);
+  const tempRange = Math.max(maxTemp - minTemp, 5);
+  const tempBars = temps.map((t) => ({
+    ...t,
+    highPct: Math.max(6, ((t.high - minTemp) / tempRange) * 100),
+    lowPct: Math.max(4, ((t.low - minTemp) / tempRange) * 100),
+  }));
+  const avgTemp = Math.round(snapshot.temperatureSeries.reduce((a, v) => a + v, 0) / Math.max(1, snapshot.temperatureSeries.length));
+
+  // ── Rain bars ──
+  const rainSeries = snapshot.rainfallSeries && snapshot.rainfallSeries.length ? snapshot.rainfallSeries : [0, 12, 45, 20, 2];
+  const maxRain = Math.max(...rainSeries, 1);
+  const totalRain = rainSeries.reduce((a, v) => a + v, 0);
+  const peakRainIndex = rainSeries.indexOf(Math.max(...rainSeries));
+  const todayIndex = Math.min(2, rainSeries.length - 1);
   const rainfall = rainSeries.map((value, index) => {
     const ratio = value / maxRain;
     let tone = 'muted';
     if (ratio >= 0.75) tone = 'strong';
     else if (ratio >= 0.45) tone = 'medium';
     else if (ratio >= 0.15) tone = 'soft';
-
-    return {
-      label: dayLabels[index] || `H${index + 1}`,
-      value: String(value),
-      ratio,
-      tone,
-      isToday: index === todayIndex,
-      isPeak: index === peakRainIndex && value > 0,
-    };
+    return { label: dayLabels[index] || `H${index + 1}`, value: String(value), ratio, tone, isToday: index === todayIndex, isPeak: index === peakRainIndex && value > 0 };
   });
-
-  const avgTemp = Math.round(
-    snapshot.temperatureSeries.reduce((acc, value) => acc + value, 0) /
-      Math.max(1, snapshot.temperatureSeries.length)
-  );
-  const peakTempDay = snapshot.forecast?.[tempGeo.maxIndex]?.day || dayLabels[tempGeo.maxIndex];
-  const peakRainDay = snapshot.forecast?.[peakRainIndex]?.day || dayLabels[peakRainIndex];
 
   const totalReports = stats?.totalContributions ?? 128;
   const accepted = stats?.acceptedContributions ?? 110;
   const coverage = Math.max(35, Math.min(98, Math.round((accepted / Math.max(totalReports, 1)) * 100)));
-
   const ranges = ['7 Hari', '1 Bulan', '1 Tahun'];
 
   return (
@@ -753,16 +484,9 @@ function DataScreen({ weather, stats, activeRange, onRangeChange }) {
         </div>
         <div className="time-tabs" role="tablist" aria-label="Rentang waktu">
           {ranges.map((range) => (
-            <button
-              key={range}
-              type="button"
-              role="tab"
-              aria-selected={activeRange === range}
+            <button key={range} type="button" role="tab" aria-selected={activeRange === range}
               className={`time-tab ${activeRange === range ? 'time-tab--active' : ''}`}
-              onClick={() => onRangeChange(range)}
-            >
-              {range}
-            </button>
+              onClick={() => onRangeChange(range)}>{range}</button>
           ))}
         </div>
       </header>
@@ -772,13 +496,13 @@ function DataScreen({ weather, stats, activeRange, onRangeChange }) {
           <div className="highlight-card__icon"><Thermometer size={20} /></div>
           <div className="highlight-card__label">Rata-rata Suhu</div>
           <div className="highlight-card__value">{avgTemp}°C</div>
-          <div className="highlight-card__hint">Tertinggi {tempGeo.maxValue}° · {peakTempDay}</div>
+          <div className="highlight-card__hint">Tertinggi {maxTemp}°</div>
         </article>
         <article className="highlight-card highlight-card--rain">
           <div className="highlight-card__icon"><CloudRain size={20} /></div>
           <div className="highlight-card__label">Total Curah Hujan</div>
           <div className="highlight-card__value">{totalRain}<span>mm</span></div>
-          <div className="highlight-card__hint">Puncak {Math.max(...rainSeries)}mm · {peakRainDay}</div>
+          <div className="highlight-card__hint">Puncak {Math.max(...rainSeries)}mm</div>
         </article>
         <article className="highlight-card highlight-card--reports">
           <div className="highlight-card__icon"><Trophy size={20} /></div>
@@ -792,107 +516,20 @@ function DataScreen({ weather, stats, activeRange, onRangeChange }) {
         <div className="chart-card__header">
           <div className="chart-card__heading">
             <h3>Suhu Harian</h3>
-            <span className="chart-card__sub">{tempGeo.minValue}° – {tempGeo.maxValue}° Celsius</span>
+            <span className="chart-card__sub">{minTemp}° – {maxTemp}° Celsius</span>
           </div>
-          <div className="chart-card__icon-circle chart-card__icon-circle--warm">
-            <Thermometer size={20} />
-          </div>
+          <div className="chart-card__icon-circle chart-card__icon-circle--warm"><Thermometer size={20} /></div>
         </div>
 
-        <div className="temperature-chart">
-          <svg
-            viewBox="0 0 100 100"
-            preserveAspectRatio="none"
-            className="temperature-chart__svg"
-            aria-hidden="true"
-          >
-            <defs>
-              <linearGradient id="tempLineGradient" x1="0" x2="1" y1="0" y2="0">
-                <stop offset="0%" stopColor="#005d90" />
-                <stop offset="50%" stopColor="#a95f00" />
-                <stop offset="100%" stopColor="#005d90" />
-              </linearGradient>
-              <linearGradient id="tempAreaGradient" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0%" stopColor="#a95f00" stopOpacity="0.22" />
-                <stop offset="100%" stopColor="#005d90" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-
-            {[0, 25, 50, 75].map((y) => (
-              <line
-                key={y}
-                x1="0"
-                x2="100"
-                y1={y + 12}
-                y2={y + 12}
-                stroke="#e0e2e8"
-                strokeWidth="0.4"
-                strokeDasharray="1.2 1.6"
-              />
-            ))}
-
-            <path d={tempGeo.areaPath} fill="url(#tempAreaGradient)" />
-            <path
-              d={tempGeo.linePath}
-              fill="none"
-              stroke="url(#tempLineGradient)"
-              strokeWidth="2.4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-
-            {tempGeo.points.map((point, index) => {
-              const isPeak = index === tempGeo.maxIndex;
-              const isLow = index === tempGeo.minIndex;
-              return (
-                <g key={`${point.x}-${index}`}>
-                  <circle
-                    cx={point.x}
-                    cy={point.y}
-                    r={isPeak || isLow ? 2.6 : 1.6}
-                    fill={isPeak ? '#a95f00' : isLow ? '#005d90' : '#ffffff'}
-                    stroke={isPeak ? '#a95f00' : '#005d90'}
-                    strokeWidth="1"
-                  />
-                </g>
-              );
-            })}
-          </svg>
-
-          {tempGeo.points.map((point, index) => {
-            if (index !== tempGeo.maxIndex && index !== tempGeo.minIndex) return null;
-            const isPeak = index === tempGeo.maxIndex;
-            return (
-              <div
-                key={`bubble-${index}`}
-                className={`temp-bubble ${isPeak ? 'temp-bubble--high' : 'temp-bubble--low'}`}
-                style={{
-                  left: `${point.x}%`,
-                  top: `${point.y}%`,
-                }}
-              >
-                {point.value}°
-              </div>
-            );
-          })}
-
-          {tempGeo.points[todayIndex] && (
-            <div
-              className="today-marker"
-              style={{ left: `${tempGeo.points[todayIndex].x}%` }}
-            />
-          )}
-        </div>
-
-        <div className="axis-labels">
-          {snapshot.forecast.map((day, index) => (
-            <span
-              key={`${day.day}-${index}`}
-              className={index === todayIndex ? 'axis-labels__active' : ''}
-            >
-              {day.day}
-              {index === todayIndex && <small> Kini</small>}
-            </span>
+        <div className="temp-chart">
+          {tempBars.map((bar) => (
+            <div key={bar.label} className="temp-bar">
+              <span className="temp-bar__value temp-bar__value--high">{bar.high}°</span>
+              <div className="temp-bar__high" style={{ height: `${bar.highPct}%` }} />
+              <div className="temp-bar__low" style={{ height: `${bar.lowPct}%` }} />
+              <span className="temp-bar__value temp-bar__value--low">{bar.low}°</span>
+              <span className={`temp-bar__label ${bar.isToday ? 'temp-bar__label--active' : ''}`}>{bar.label}</span>
+            </div>
           ))}
         </div>
       </section>
@@ -903,32 +540,16 @@ function DataScreen({ weather, stats, activeRange, onRangeChange }) {
             <h3>Curah Hujan</h3>
             <span className="chart-card__sub">{totalRain}mm dalam {rainSeries.length} hari</span>
           </div>
-          <div className="chart-card__icon-circle chart-card__icon-circle--cool">
-            <CloudRain size={20} />
-          </div>
+          <div className="chart-card__icon-circle chart-card__icon-circle--cool"><CloudRain size={20} /></div>
         </div>
 
         <div className="rain-chart">
           {rainfall.map((bar, index) => (
             <div key={`${bar.label}-${index}`} className="rain-bar">
-              <div className="rain-bar__value-wrap">
-                <Droplets
-                  className={`rain-bar__icon rain-bar__icon--${bar.tone}`}
-                  size={14}
-                />
-                <span className={`rain-bar__value rain-bar__value--${bar.tone}`}>
-                  {bar.value}
-                </span>
-              </div>
-              <div className="rain-bar__track">
-                <div
-                  className={`rain-bar__fill rain-bar__fill--${bar.tone} ${bar.isPeak ? 'rain-bar__fill--peak' : ''}`}
-                  style={{ height: `${Math.max(6, bar.ratio * 100)}%` }}
-                />
-              </div>
-              <span className={`rain-bar__label ${bar.isToday ? 'rain-bar__label--active' : ''}`}>
-                {bar.label}
-              </span>
+              <span className={`rain-bar__value rain-bar__value--${bar.tone}`}>{bar.value}</span>
+              <div className={`rain-bar__fill rain-bar__fill--${bar.tone} ${bar.isPeak ? 'rain-bar__fill--peak' : ''}`}
+                style={{ height: `${Math.max(6, bar.ratio * 100)}%` }} />
+              <span className={`rain-bar__label ${bar.isToday ? 'rain-bar__label--active' : ''}`}>{bar.label}</span>
             </div>
           ))}
         </div>
@@ -949,26 +570,14 @@ function DataScreen({ weather, stats, activeRange, onRangeChange }) {
             <p className="reports-card__caption">Terima kasih sudah ikut bantu memantau cuaca!</p>
           </div>
         </div>
-
-        <div className="reports-card__meta">
-          <span>Cakupan Wilayah</span>
-          <span className="reports-card__value">{coverage}%</span>
-        </div>
-        <div className="progress-track">
-          <div
-            className="progress-track__fill"
-            style={{ width: `${coverage}%` }}
-          />
-        </div>
-
+        <div className="reports-card__meta"><span>Cakupan Wilayah</span><span className="reports-card__value">{coverage}%</span></div>
+        <div className="progress-track"><div className="progress-track__fill" style={{ width: `${coverage}%` }} /></div>
         <div className="reports-card__footer">
           <div className="coverage-pill">
             <span aria-hidden="true">🗺️</span>
             <span>{coverage >= 80 ? 'Wilayahmu sudah terlindungi' : 'Ajak warga lain untuk melapor'}</span>
           </div>
-          {snapshot.summary && (
-            <p className="reports-card__summary">{snapshot.summary}</p>
-          )}
+          {snapshot.summary && <p className="reports-card__summary">{snapshot.summary}</p>}
         </div>
       </section>
     </div>
@@ -977,80 +586,51 @@ function DataScreen({ weather, stats, activeRange, onRangeChange }) {
 
 function ProfileScreen({ stats, weather }) {
   const snapshot = weather || fallbackWeather;
-  const statValues = stats || {
-    totalQueries: 450,
-    totalContributions: 1250,
-    acceptedContributions: 1100,
-    rejectedContributions: 150,
-    activeUsers: 300,
-    avgValidationScore: 0.85,
-  };
+  const statValues = stats || { totalQueries: 450, totalContributions: 1250, acceptedContributions: 1100, rejectedContributions: 150, activeUsers: 300, avgValidationScore: 0.85 };
 
   return (
     <div className="screen screen--profile">
       <section className="profile-hero">
-        <div className="avatar avatar--profile" aria-hidden="true">
-          <span>PB</span>
-          <div className="avatar__badge">✓</div>
-        </div>
+        <div className="avatar avatar--profile" aria-hidden="true"><span>PB</span><div className="avatar__badge">✓</div></div>
         <h2>Pak Budi</h2>
         <div className="profile-badge">🌾 Petani Cuaca Andal</div>
         <div className="profile-stars" aria-label="Rating 4 dari 5">
-          {[0, 1, 2, 3, 4].map((index) => (
-            <Star key={index} size={18} fill={index < 4 ? 'currentColor' : 'none'} />
-          ))}
+          {[0, 1, 2, 3, 4].map((index) => <Star key={index} size={18} fill={index < 4 ? 'currentColor' : 'none'} />)}
         </div>
       </section>
 
       <section className="stats-grid">
         <article className="stat-card stat-card--reports">
           <div className="stat-card__icon">📤</div>
-          <div>
-            <div className="stat-card__value">{statValues.totalContributions}</div>
-            <div className="stat-card__label">Total Laporan</div>
-          </div>
+          <div><div className="stat-card__value">{statValues.totalContributions}</div><div className="stat-card__label">Total Laporan</div></div>
         </article>
         <article className="stat-card stat-card--accepted">
           <div className="stat-card__icon">✅</div>
-          <div>
-            <div className="stat-card__value">{statValues.acceptedContributions}</div>
-            <div className="stat-card__label">Diterima</div>
-          </div>
+          <div><div className="stat-card__value">{statValues.acceptedContributions}</div><div className="stat-card__label">Diterima</div></div>
         </article>
         <article className="stat-card stat-card--accuracy">
           <div className="stat-card__icon">🎯</div>
-          <div>
-            <div className="stat-card__value">{Math.round(statValues.avgValidationScore * 100)}%</div>
-            <div className="stat-card__label">Akurasi</div>
-          </div>
+          <div><div className="stat-card__value">{Math.round(statValues.avgValidationScore * 100)}%</div><div className="stat-card__label">Akurasi</div></div>
         </article>
         <article className="stat-card stat-card--rank">
           <div className="stat-card__icon">🏆</div>
-          <div>
-            <div className="stat-card__value">#{Math.max(1, 25 - Math.round(statValues.avgValidationScore * 10))}</div>
-            <div className="stat-card__label">Peringkat Desa</div>
-          </div>
+          <div><div className="stat-card__value">#{Math.max(1, 25 - Math.round(statValues.avgValidationScore * 10))}</div><div className="stat-card__label">Peringkat Desa</div></div>
         </article>
       </section>
 
       <section className="section-block">
         <h3 className="section-title">Pencapaian</h3>
         <div className="achievement-row">
-          {achievements.map((achievement) => (
-            <article key={achievement.label} className={`achievement-card ${achievement.active ? 'achievement-card--active' : ''}`}>
-              <span className="achievement-card__emoji" aria-hidden="true">{achievement.emoji}</span>
-              <span>{achievement.label}</span>
+          {achievements.map((a) => (
+            <article key={a.label} className={`achievement-card ${a.active ? 'achievement-card--active' : ''}`}>
+              <span className="achievement-card__emoji" aria-hidden="true">{a.emoji}</span><span>{a.label}</span>
             </article>
           ))}
         </div>
       </section>
 
       <section className="leaderboard-card">
-        <div className="leaderboard-card__title">
-          <Trophy size={22} />
-          <h3>Top Pelapor Minggu Ini - Desamu</h3>
-        </div>
-
+        <div className="leaderboard-card__title"><Trophy size={22} /><h3>Top Pelapor Minggu Ini - Desamu</h3></div>
         <div className="leaderboard-list">
           {leaderboard.map((entry) => (
             <article key={entry.rank} className={`leaderboard-row ${entry.rank === 1 ? 'leaderboard-row--first' : ''}`}>
@@ -1058,7 +638,7 @@ function ProfileScreen({ stats, weather }) {
               <div className="leaderboard-row__avatar" aria-hidden="true">{entry.avatar}</div>
               <div className="leaderboard-row__copy">
                 <div className="leaderboard-row__name">{entry.name}</div>
-                <div className="leaderboard-row__meta">{entry.reports} • {snapshot.current.description}</div>
+                <div className="leaderboard-row__meta">{entry.reports}</div>
               </div>
               {entry.rank === 1 ? <Star size={18} /> : null}
             </article>
@@ -1075,16 +655,10 @@ function BottomNav({ activeTab, onChange }) {
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const active = tab.id === activeTab;
-
         return (
-          <button
-            key={tab.id}
-            className={`bottom-nav__item ${active ? 'bottom-nav__item--active' : ''}`}
-            type="button"
-            onClick={() => onChange(tab.id)}
-          >
-            <Icon size={22} strokeWidth={active ? 2.4 : 2} />
-            <span>{tab.label}</span>
+          <button key={tab.id} className={`bottom-nav__item ${active ? 'bottom-nav__item--active' : ''}`}
+            type="button" onClick={() => onChange(tab.id)}>
+            <Icon size={22} strokeWidth={active ? 2.4 : 2} /><span>{tab.label}</span>
           </button>
         );
       })}

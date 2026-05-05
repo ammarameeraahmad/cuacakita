@@ -1,180 +1,78 @@
-# 📡 Tutorial Integrasi BMKG (Badan Meteorologi, Klimatologi, dan Geofisika)
+# 📡 Tutorial Integrasi BMKG + Auto-Lokasi
 
-## 🎯 Tujuan
-Aplikasi ClimSight dapat menampilkan data cuaca **real-time dari BMKG** berdasarkan lokasi pengguna.
-Data ini digunakan di halaman Beranda, Data, dan untuk menjawab pertanyaan AI tentang cuaca.
-
----
-
-## 🔧 Cara Setup
-
-### 1. Dapatkan Kode Wilayah (ADM4 Code)
-
-BMKG menggunakan kode administratif tingkat 4 (ADM4) untuk merujuk ke desa/kelurahan tertentu.
-Format kode: `XX.XX.XX.XXXX` (Provinsi.Kabupaten.Kecamatan.Desa)
-
-**Cara mendapatkannya:**
-
-**Opsi A - Cari manual (rekomendasi):**
-1. Buka: https://api.bmkg.go.id/publik/prakiraan-cuaca
-2. Cari lokasi yang diinginkan di parameter `adm4`
-3. Catat kode ADM4 yang muncul
-
-**Opsi B - Cari via browser:**
-1. Buka: `https://api.bmkg.go.id/publik/prakiraan-cuaca?adm4=31.71.01.1001`
-2. Ganti `31.71.01.1001` dengan kode wilayah Anda
-3. Lihat response JSON untuk melihat data cuaca
-
-**Contoh kode ADM4 beberapa wilayah:**
-| Wilayah | Kode ADM4 |
-|---------|-----------|
-| DKI Jakarta - Gambir | `31.71.01.1001` |
-| Sleman, Yogyakarta | `34.04.01.1001` |
-| Bandung, Jawa Barat | `32.73.01.1001` |
-| Surabaya, Jawa Timur | `35.78.01.1001` |
-
-### 2. Buat File `.env` di Folder Backend
-
-Buat file `backend/.env` dengan isi:
-
-```env
-# ── BMKG Weather API ───────────────────────────
-# Kode wilayah administratif desa/kelurahan (ADM4)
-BMKG_ADM4_CODE=31.71.01.1001
-
-# URL API BMKG (opsional, gunakan default jika tidak diisi)
-# BMKG_API_URL=https://api.bmkg.go.id/publik/prakiraan-cuaca?adm4=${BMKG_ADM4_CODE}
-
-# ── Server ─────────────────────────────────────
-PORT=3001
-
-# ── Groq Cloud AI (untuk fitur Tanya AI) ───────
-GROQ_API_KEY=your_groq_api_key_here
-```
-
-### 3. Jalankan Backend
-
-```bash
-cd backend
-
-# Install dependencies (pertama kali saja)
-npm install
-
-# Jalankan development server
-npm run dev
-```
-
-Backend akan berjalan di `http://localhost:3001`
-
-### 4. Jalankan Frontend
-
-```bash
-cd frontend
-
-# Install dependencies (pertama kali saja)
-npm install
-
-# Jalankan development server
-npm run dev
-```
-
-Frontend akan berjalan di `http://localhost:5173`
-
----
-
-## 🧪 Testing Integrasi BMKG
-
-### Test Langsung via Browser
-Buka URL berikut untuk melihat data cuaca langsung dari BMKG:
-```
-http://localhost:3001/api/weather?location=Desa%20Sukamaju
-```
-
-### Expected Response
-```json
-{
-  "source": "bmkg",
-  "locationLabel": "Gambir, DKI Jakarta",
-  "subLabel": "Data resmi BMKG",
-  "current": {
-    "temperature": 28,
-    "description": "Berawan",
-    "humidity": 78,
-    "windSpeed": 12,
-    "visibility": 8,
-    "icon": "⛅"
-  },
-  "forecast": [...],
-  "temperatureSeries": [...],
-  "rainfallSeries": [...],
-  "summary": "Gambir diperkirakan berawan dengan suhu 28°C."
-}
-```
-
-Jika gagal, backend otomatis akan fallback ke **data demo**.
-
----
-
-## 🌐 Cara Kerja Sistem
-
-```
-User klik tombol "📍 Lokasi Saya"
-       │
-       ▼
-Browser minta izin geolocation
-       │
-       ▼
-Dapatkan koordinat (lat, lng)
-       │
-       ▼
-Reverse Geocode via Nominatim (gratis) → nama desa/kecamatan
-       │
-       ▼
-Kirim nama lokasi ke backend → GET /api/weather?location=...
-       │
-       ▼
-Backend panggil API BMKG dengan ADM4 code
-       │
-       ▼
-Tampilkan data cuaca di aplikasi
-```
-
----
+## 🎯 Cara Kerja Sistem
+Sekarang **tidak perlu lagi setting ADM4 manual!** Sistem akan:
+1. **Otomatis** mendeteksi lokasi pengguna via browser (minta izin)
+2. **Reverse geocode** lat/lng → nama desa/kecamatan (via OpenStreetMap Nominatim - GRATIS)
+3. **Cocokkan** dengan database `lokasi.md` (berisi 80.000+ desa seluruh Indonesia)
+4. **Dapatkan ADM4 code** yang tepat untuk API BMKG
+5. **Tampilkan data cuaca real-time** dari BMKG
 
 ## 🆓 API yang Digunakan (GRATIS semuanya!)
-
 | API | Keperluan | Biaya |
 |-----|-----------|-------|
 | **BMKG** (api.bmkg.go.id) | Data cuaca resmi Indonesia | **GRATIS** (publik) |
 | **OpenStreetMap Nominatim** | Reverse geolocation (lat/lng → alamat) | **GRATIS** |
 | **Browser Geolocation API** | Mendapatkan koordinat pengguna | **GRATIS** |
-| **Groq Cloud** (opsional) | AI chat untuk tanya cuaca | **GRATIS** (dengan limit) |
+| **lokasi.md** (database offline) | Mencocokkan nama desa dengan ADM4 code | **GRATIS** |
 
----
+## 🔧 Setup
+
+### 1. File `.env` di Folder Backend
+Buat file `backend/.env` (tidak wajib, cukup untuk fallback):
+
+```env
+# ── Server ─────────────────────────────────────
+PORT=3001
+
+# ── BMKG (FALLBACK, otomatis jika database tidak menemukan) ──
+# BMKG_ADM4_CODE=31.71.01.1001
+```
+
+### 2. Database Lokasi
+File `lokasi bmkg/lokasi.md` sudah berisi semua kode desa di Indonesia.
+Sistem akan membaca file ini secara otomatis saat backend dijalankan.
+
+### 3. Jalankan Backend
+```bash
+cd backend
+npm install
+npm run dev
+```
+
+### 4. Jalankan Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+## 🧪 Testing
+
+### Cek data BMKG langsung
+```
+http://localhost:3001/api/weather?location=Desa%20Sukamaju
+```
+
+Sistem akan mencari ADM4 code dari database lokasi secara otomatis.
+
+## 📁 Struktur File Penting
+
+| File | Fungsi |
+|------|--------|
+| `backend/src/lib/bmkg.ts` | Panggil API BMKG dengan ADM4 dinamis |
+| `backend/src/lib/location-lookup.ts` | Pencocokan nama lokasi → ADM4 code |
+| `lokasi bmkg/lokasi.md` | Database 80.000+ kode desa Indonesia |
+| `frontend/src/lib/geolocation.js` | Geolokasi browser + reverse geocode |
+| `frontend/src/App.jsx` | Auto-detect lokasi saat app dimuat |
 
 ## ⚠️ Troubleshooting
 
 ### "Data BMKG belum tersedia"
-- Cek kode ADM4 di `backend/.env` sudah benar
-- Cek koneksi internet
-- Backend akan otomatis pakai demo data jika BMKG tidak bisa diakses
+- Database lokasi tidak menemukan kecocokan
+- Akan fallback ke data demo
 
-### "Izin lokasi ditolak"
-- Browser akan menampilkan popup izin lokasi
-- Jika terblokir, buka pengaturan browser → izinkan akses lokasi
-- Atau ketik manual nama lokasi di laporan
-
-### CORS Error
-- Pastikan backend jalan di port 3001
-- CORS sudah dihandle oleh Express middleware
-
----
-
-## 📁 File Penting
-
-| File | Fungsi |
-|------|--------|
-| `backend/src/lib/bmkg.ts` | Panggil API BMKG & parse response |
-| `backend/.env` | Konfigurasi ADM4 code |
-| `frontend/src/lib/geolocation.js` | Geolokasi browser + reverse geocode |
-| `frontend/src/lib/api.js` | HTTP client ke backend |
+### "Izin lokasi ditolak" di awal
+- Browser akan minta izin saat pertama kali
+- Jika ditolak, app tetap jalan pakai data default (Desa Sukamaju)
+- Bisa klik tombol 📍 di TopBar untuk coba lagi
