@@ -18,7 +18,7 @@ export async function runAgentLoop(
 ): Promise<AgentResponse> {
 
   const validHistory: Message[] = conversationHistory
-    .slice(-4)
+    .slice(-5)
     .filter(msg => ['system', 'user', 'assistant', 'tool'].includes(msg.role))
     .map(msg => ({ role: msg.role as 'system' | 'user' | 'assistant' | 'tool', content: msg.content }));
 

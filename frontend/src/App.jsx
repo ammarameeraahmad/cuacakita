@@ -256,11 +256,11 @@ function App() {
     if (!text || chatLoading) return;
     const newUserMessage = { id: `user-${Date.now()}`, role: 'user', content: text };
     setChatLoading(true);
+    // Compute history from current messages before adding new
+    const history = chatMessages.slice(-5).map(m => ({ role: m.role, content: m.content }));
     setChatMessages((current) => [...current, newUserMessage]);
     try {
       const locationLabel = weather?.locationLabel || locationContext?.locationLabel || reportState.location || 'Desa Sukamaju, 12 Okt';
-      // Send last 4 messages as context (excluding the new one, but include system if present)
-      const history = chatMessages.slice(-4).filter(m => m.role !== 'assistant' || m.id.startsWith('assistant-')).map(m => ({ role: m.role, content: m.content }));
       const response = await sendChat(text, locationLabel, buildLocationHints(locationContext), history);
       setChatMessages((current) => [...current, { id: `assistant-${Date.now()}`, role: 'assistant', content: response.answer }]);
     } catch {
