@@ -13,12 +13,14 @@ import { callGroqChatCompletion } from '../lib/groq.js';
 export async function runAgentLoop(
   userTask: string,
   tools: Tool[],
-  maxSteps: number = 5
+  maxSteps: number = 5,
+  conversationHistory: Array<{ role: string; content: string }> = []
 ): Promise<AgentResponse> {
-  
+
   const state: AgentState = {
     messages: [
       { role: 'system', content: AGENTIC_RAG_SYSTEM_PROMPT },
+      ...conversationHistory.slice(-4), // Include last 4 messages as context
       { role: 'user', content: userTask }
     ],
     status: 'running',

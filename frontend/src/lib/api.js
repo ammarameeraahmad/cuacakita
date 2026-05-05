@@ -41,10 +41,10 @@ export function getStats() {
   return request('/stats');
 }
 
-export function sendChat(message, location, locationHints = []) {
+export function sendChat(message, location, locationHints = [], history = []) {
   return request('/chat', {
     method: 'POST',
-    body: JSON.stringify({ message, location, locationHints }),
+    body: JSON.stringify({ message, location, locationHints, history }),
   });
 }
 

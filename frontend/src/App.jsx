@@ -254,11 +254,14 @@ function App() {
   const handleSendChat = async (message) => {
     const text = message.trim();
     if (!text || chatLoading) return;
+    const newUserMessage = { id: `user-${Date.now()}`, role: 'user', content: text };
     setChatLoading(true);
-    setChatMessages((current) => [...current, { id: `user-${Date.now()}`, role: 'user', content: text }]);
+    setChatMessages((current) => [...current, newUserMessage]);
     try {
       const locationLabel = weather?.locationLabel || locationContext?.locationLabel || reportState.location || 'Desa Sukamaju, 12 Okt';
-      const response = await sendChat(text, locationLabel, buildLocationHints(locationContext));
+      // Send last 4 messages as context (excluding the new one, but include system if present)
+      const history = chatMessages.slice(-4).filter(m => m.role !== 'assistant' || m.id.startsWith('assistant-')).map(m => ({ role: m.role, content: m.content }));
+      const response = await sendChat(text, locationLabel, buildLocationHints(locationContext), history);
       setChatMessages((current) => [...current, { id: `assistant-${Date.now()}`, role: 'assistant', content: response.answer }]);
     } catch {
       setChatMessages((current) => [...current, { id: `error-${Date.now()}`, role: 'assistant', content: 'Maaf, AI sedang tidak bisa dihubungi. Coba lagi beberapa saat.' }]);
