@@ -1,10 +1,11 @@
 import { Message } from '../rag/types.js';
 
 const GROQ_ENDPOINT = 'https://api.groq.com/openai/v1/chat/completions';
-const DEFAULT_MODEL = process.env.GROQ_MODEL || 'llama-3.1-70b-versatile';
+const DEFAULT_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 
-function buildFallbackAnswer(messages: Message[]) {
-  return 'Maaf, AI sedang tidak tersedia. Silakan coba lagi beberapa saat atau gunakan informasi BMKG di layar.';
+function buildFallbackAnswer(messages: Message[], error?: string) {
+  const base = 'Maaf, AI sedang tidak tersedia. Silakan coba lagi beberapa saat atau gunakan informasi BMKG di layar.';
+  return error ? `${base}\n\nDebug: ${error}` : base;
 }
 
 export async function callGroqChatCompletion(
@@ -14,7 +15,7 @@ export async function callGroqChatCompletion(
   const apiKey = process.env.GROQ_API_KEY;
 
   if (!apiKey) {
-    return buildFallbackAnswer(messages);
+    return buildFallbackAnswer(messages, 'GROQ_API_KEY not set');
   }
 
   try {
@@ -34,7 +35,8 @@ export async function callGroqChatCompletion(
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Groq request failed (${response.status}): ${errorText}`);
+      console.error(`Groq API error: ${response.status} - ${errorText}`);
+      return buildFallbackAnswer(messages, `API error ${response.status}: ${errorText}`);
     }
 
     const payload = await response.json();
@@ -44,9 +46,9 @@ export async function callGroqChatCompletion(
       return content.trim();
     }
 
-    return buildFallbackAnswer(messages);
+    return buildFallbackAnswer(messages, 'No content in response');
   } catch (error) {
     console.error('[Groq] Falling back to local response:', error);
-    return buildFallbackAnswer(messages);
+    return buildFallbackAnswer(messages, `Exception: ${error}`);
   }
 }
