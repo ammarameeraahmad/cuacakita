@@ -18,42 +18,52 @@ export async function callGroqChatCompletion(
     return buildFallbackAnswer(messages, 'GROQ_API_KEY not set');
   }
 
-  try {
-    const requestBody = {
-      model: options.model || DEFAULT_MODEL,
-      messages,
-      temperature: options.temperature ?? 0.2,
-      max_tokens: options.maxTokens ?? 700,
-    };
+   try {
+     const requestBody = {
+       model: options.model || DEFAULT_MODEL,
+       messages,
+       temperature: options.temperature ?? 0.2,
+       max_tokens: options.maxTokens ?? 700,
+     };
 
-    // Log the complete request to Groq API
-    console.log('=== GROQ API REQUEST ===');
-    console.log('Endpoint:', GROQ_ENDPOINT);
-    console.log('Model:', requestBody.model);
-    console.log('Temperature:', requestBody.temperature);
-    console.log('Max Tokens:', requestBody.max_tokens);
-    console.log('Number of messages:', messages.length);
-    messages.forEach((msg, idx) => {
-      console.log(`Message ${idx}: role=${msg.role}, content type=${typeof msg.content}, content sample=`, String(msg.content).substring(0, 200));
-    });
-    console.log('Complete request body (stringified):');
-    console.log(JSON.stringify(requestBody));
-    console.log('=======================');
+     // Log the complete request to Groq API
+     console.log('=== GROQ API REQUEST ===');
+     console.log('Endpoint:', GROQ_ENDPOINT);
+     console.log('Model:', requestBody.model);
+     console.log('Temperature:', requestBody.temperature);
+     console.log('Max Tokens:', requestBody.max_tokens);
+     console.log('Number of messages:', messages.length);
+     messages.forEach((msg, idx) => {
+       console.log(`Message ${idx}: role=${msg.role}, content type=${typeof msg.content}, content sample=`, String(msg.content).substring(0, 200));
+     });
+     console.log('Complete request body (stringified):');
+     console.log(JSON.stringify(requestBody));
+     console.log('=======================');
 
-    const response = await fetch(GROQ_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-    });
+     // Create an AbortController with a 20-second timeout for Groq API
+     const controller = new AbortController();
+     const timeoutId = setTimeout(() => controller.abort(), 20000);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Groq API error: ${response.status} - ${errorText}`);
-      return buildFallbackAnswer(messages, `API error ${response.status}: ${errorText}`);
-    }
+     let response;
+     try {
+       response = await fetch(GROQ_ENDPOINT, {
+         method: 'POST',
+         headers: {
+           Authorization: `Bearer ${apiKey}`,
+           'Content-Type': 'application/json',
+         },
+         body: JSON.stringify(requestBody),
+         signal: controller.signal,
+       });
+     } finally {
+       clearTimeout(timeoutId);
+     }
+
+     if (!response.ok) {
+       const errorText = await response.text();
+       console.error(`Groq API error: ${response.status} - ${errorText}`);
+       return buildFallbackAnswer(messages, `API error ${response.status}: ${errorText}`);
+     }
 
     const payload = await response.json();
     const content = payload?.choices?.[0]?.message?.content;

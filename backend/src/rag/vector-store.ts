@@ -21,10 +21,11 @@ export class MockVectorStore implements VectorStore {
   /**
    * Search for semantically similar documents based on the query.
    * Note: This mock just returns a static document to simulate retrieval.
+   * In production, the real vector store implementation should include its own timeout.
    */
   async similaritySearch(query: string, limit: number = 3): Promise<Document[]> {
     console.log(`[MockVectorStore] Searching for: "${query}" (limit: ${limit})`);
-    
+
     // Simulate latency
     await new Promise(resolve => setTimeout(resolve, 500));
 

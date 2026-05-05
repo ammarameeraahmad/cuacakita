@@ -51,15 +51,23 @@ export function getCurrentPosition(options = {}) {
 export async function reverseGeocode(lat, lng) {
   const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14&accept-language=id`;
 
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': 'ClimSight/1.0 (weather-app-hackathon)',
-    },
-  });
+  // Create an AbortController with a 10-second timeout
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-  if (!response.ok) {
-    throw new Error(`Reverse geocode gagal (${response.status})`);
-  }
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'ClimSight/1.0 (weather-app-hackathon)',
+      },
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`Reverse geocode gagal (${response.status})`);
+    }
 
   const data = await response.json();
 

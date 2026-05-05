@@ -2,20 +2,37 @@ const DEFAULT_API_BASE = import.meta.env.PROD ? '/_/backend/api' : '/api';
 export const API_BASE = import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE;
 
 async function request(path, options = {}) {
-  const response = await fetch(`${API_BASE}${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers || {}),
-    },
-    ...options,
-  });
+  // Default timeout: 35 seconds to accommodate worst-case BMKG(10s) + Groq(20s) + overhead
+  const { timeout = 35000, ...fetchOptions } = options;
 
-  if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || `Request failed with status ${response.status}`);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const response = await fetch(`${API_BASE}${path}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(options.headers || {}),
+      },
+      signal: controller.signal,
+      ...fetchOptions,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const message = await response.text();
+      throw new Error(message || `Request failed with status ${response.status}`);
+    }
+
+    return response.json();
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new Error(`Request timeout after ${timeout}ms`);
+    }
+    throw error;
   }
-
-  return response.json();
 }
 
 export function getWeather(params) {

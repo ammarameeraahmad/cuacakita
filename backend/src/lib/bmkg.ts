@@ -233,17 +233,28 @@ export async function getWeatherSnapshot(locationLabel?: string, locationHints: 
   console.log(`[BMKG] Fetching weather for ADM4: ${adm4Code} (location: "${locationLabel || 'default'}")`);
 
   try {
-    const response = await fetch(apiUrl, {
-      headers: {
-        Accept: 'application/json',
-      },
-    });
+    // Create an AbortController with a 10-second timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+    let response;
+    try {
+      response = await fetch(apiUrl, {
+        headers: {
+          Accept: 'application/json',
+        },
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (!response.ok) {
       throw new Error(`BMKG request failed (${response.status}) for ADM4: ${adm4Code}`);
     }
 
     const payload = (await response.json()) as BmkgApiResponse;
+    clearTimeout(timeoutId);
     const groupedPeriods = normalizeForecastGroups(payload?.data?.[0]?.cuaca);
 
     if (groupedPeriods.length === 0) {

@@ -9,6 +9,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Global request timeout: 35 seconds (slightly longer than frontend 30s to allow response delivery)
+app.use((req, res, next) => {
+  req.setTimeout(35000, () => {
+    if (!res.headersSent) {
+      res.status(503).json({ error: 'Request timeout - server took too long to respond' });
+    }
+  });
+  next();
+});
+
 // POST /api/chat
 app.post('/api/chat', async (req, res) => {
   try {
