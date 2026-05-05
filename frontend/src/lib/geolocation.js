@@ -55,19 +55,21 @@ export async function reverseGeocode(lat, lng) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 10000);
 
+  let response;
   try {
-    const response = await fetch(url, {
+    response = await fetch(url, {
       headers: {
         'User-Agent': 'ClimSight/1.0 (weather-app-hackathon)',
       },
       signal: controller.signal,
     });
-
+  } finally {
     clearTimeout(timeoutId);
+  }
 
-    if (!response.ok) {
-      throw new Error(`Reverse geocode gagal (${response.status})`);
-    }
+  if (!response.ok) {
+    throw new Error(`Reverse geocode gagal (${response.status})`);
+  }
 
   const data = await response.json();
 
