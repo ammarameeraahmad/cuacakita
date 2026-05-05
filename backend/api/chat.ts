@@ -6,14 +6,15 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    const { message, location, locationHints } = req.body ?? {};
+    const { message, location, locationHints, history, userName } = req.body ?? {};
 
     if (!message) {
       return res.status(400).json({ error: 'Message is required' });
     }
 
     const hints = Array.isArray(locationHints) ? locationHints.filter(Boolean) : [];
-    const response = await createChatResponse(message, location, hints);
+    const chatHistory = Array.isArray(history) ? history : [];
+    const response = await createChatResponse(message, location, hints, chatHistory, userName);
 
     return res.status(200).json({
       answer: response.answer,

@@ -255,19 +255,23 @@ function App() {
     const text = message.trim();
     if (!text || chatLoading) return;
     const newUserMessage = { id: `user-${Date.now()}`, role: 'user', content: text };
-    setChatLoading(true);
-    // Compute history from current messages before adding new
-    const history = chatMessages.slice(-5).map(m => ({ role: m.role, content: m.content }));
+
+    // Compute history BEFORE adding new message
+    const historyBefore = chatMessages.slice(-5).map(m => ({ role: m.role, content: m.content }));
+
     console.log('=== FRONTEND: Sending chat ===');
-    console.log('Message:', text);
-    console.log('History:', history);
-    console.log('User name:', profile?.displayName || 'pengguna');
+    console.log('Current chatMessages state:', chatMessages);
+    console.log('History to send:', historyBefore);
+    console.log('New message to add:', text);
     console.log('=====================================');
+
+    setChatLoading(true);
     setChatMessages((current) => [...current, newUserMessage]);
+
     try {
       const locationLabel = weather?.locationLabel || locationContext?.locationLabel || reportState.location || 'Desa Sukamaju, 12 Okt';
       const userName = profile?.displayName || 'pengguna';
-      const response = await sendChat(text, locationLabel, buildLocationHints(locationContext), history, userName);
+      const response = await sendChat(text, locationLabel, buildLocationHints(locationContext), historyBefore, userName);
       setChatMessages((current) => [...current, { id: `assistant-${Date.now()}`, role: 'assistant', content: response.answer }]);
     } catch {
       setChatMessages((current) => [...current, { id: `error-${Date.now()}`, role: 'assistant', content: 'Maaf, AI sedang tidak bisa dihubungi. Coba lagi beberapa saat.' }]);

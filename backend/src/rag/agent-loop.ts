@@ -29,9 +29,10 @@ export async function runAgentLoop(
     { role: 'user', content: userTask + userContext }
   ] as Message[];
 
-  console.log('=== MESSAGES SENT TO GROQ ===');
+  // Log initial messages with history
+  console.log('=== INITIAL MESSAGES (with history) ===');
   console.log(JSON.stringify(messages, null, 2));
-  console.log('==============================');
+  console.log('======================================');
 
   const state: AgentState = {
     messages,
@@ -54,10 +55,23 @@ export async function runAgentLoop(
       }
     }
 
-    const responseText = await callGroqChatCompletion([
-      { role: 'system', content: `${AGENTIC_RAG_SYSTEM_PROMPT}\n\nGunakan konteks cuaca BMKG dan hasil pencarian pengetahuan di bawah ini untuk menjawab dengan jelas, ringkas, dan natural dalam Bahasa Indonesia.` },
-      { role: 'user', content: `Pertanyaan pengguna: ${userTask}\n\nKonteks alat:\n${toolOutputs.join('\n\n') || 'Tidak ada konteks alat yang tersedia.'}` },
-    ]);
+    // Add tool outputs as a system message to preserve conversation history
+    const toolContextMessage = `Konteks data BMKG dan pengetahuan:\n${toolOutputs.join('\n\n') || 'Tidak ada konteks alat yang tersedia.'}`;
+    
+    // Build final messages array WITH conversation history AND tool outputs
+    const messagesForGroq = [
+      ...messages, // Includes system prompt, history, and original user message
+      { role: 'system', content: toolContextMessage }
+    ] as Message[];
+
+    // Log COMPLETE prompt sent to Groq (including BMKG data)
+    console.log('=== COMPLETE PROMPT SENT TO GROQ ===');
+    console.log('Number of messages:', messagesForGroq.length);
+    console.log('Full messages array:');
+    console.log(JSON.stringify(messagesForGroq, null, 2));
+    console.log('=====================================');
+
+    const responseText = await callGroqChatCompletion(messagesForGroq);
 
     state.messages.push({
       role: 'assistant',

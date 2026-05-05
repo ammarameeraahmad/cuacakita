@@ -19,18 +19,31 @@ export async function callGroqChatCompletion(
   }
 
   try {
+    const requestBody = {
+      model: options.model || DEFAULT_MODEL,
+      messages,
+      temperature: options.temperature ?? 0.2,
+      max_tokens: options.maxTokens ?? 700,
+    };
+
+    // Log the complete request to Groq API
+    console.log('=== GROQ API REQUEST ===');
+    console.log('Endpoint:', GROQ_ENDPOINT);
+    console.log('Model:', requestBody.model);
+    console.log('Temperature:', requestBody.temperature);
+    console.log('Max Tokens:', requestBody.maxTokens ?? 700);
+    console.log('Number of messages:', messages.length);
+    console.log('Complete request body:');
+    console.log(JSON.stringify(requestBody, null, 2));
+    console.log('=======================');
+
     const response = await fetch(GROQ_ENDPOINT, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: options.model || DEFAULT_MODEL,
-        messages,
-        temperature: options.temperature ?? 0.2,
-        max_tokens: options.maxTokens ?? 700,
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
