@@ -258,6 +258,11 @@ function App() {
     setChatLoading(true);
     // Compute history from current messages before adding new
     const history = chatMessages.slice(-5).map(m => ({ role: m.role, content: m.content }));
+    console.log('=== FRONTEND: Sending chat ===');
+    console.log('Message:', text);
+    console.log('History:', history);
+    console.log('User name:', profile?.displayName || 'pengguna');
+    console.log('=====================================');
     setChatMessages((current) => [...current, newUserMessage]);
     try {
       const locationLabel = weather?.locationLabel || locationContext?.locationLabel || reportState.location || 'Desa Sukamaju, 12 Okt';

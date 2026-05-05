@@ -75,6 +75,12 @@ function buildLocalChatAnswer(weather: WeatherSnapshot, knowledgeHits: Document[
 }
 
 export async function createChatResponse(message: string, location?: string, locationHints: string[] = [], conversationHistory: Array<{ role: string; content: string }> = [], userName?: string) {
+  console.log('=== BACKEND: Received chat request ===');
+  console.log('Message:', message);
+  console.log('Conversation history:', conversationHistory);
+  console.log('User name:', userName);
+  console.log('=====================================');
+
   await recordQuery();
   const weather = await getWeatherSnapshot(location, locationHints);
   const knowledgeHits = await searchClimateKnowledge(message, 3);
