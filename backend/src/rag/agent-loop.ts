@@ -23,7 +23,7 @@ export async function runAgentLoop(
     .filter(msg => ['system', 'user', 'assistant', 'tool'].includes(msg.role))
     .map((msg): Message => ({ role: msg.role as 'system' | 'user' | 'assistant' | 'tool', content: msg.content }));
 
-  const messages = [
+  const messages: Message[] = [
     { role: 'system', content: AGENTIC_RAG_SYSTEM_PROMPT },
     ...validHistory, // Include last 5 valid messages as context
     { role: 'user', content: userTask + userContext }
