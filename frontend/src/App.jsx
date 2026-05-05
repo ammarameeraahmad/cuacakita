@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   ArrowRight,
   BarChart3,
@@ -13,6 +13,7 @@ import {
   Mic,
   Minus,
   MoreVertical,
+  Navigation,
   Plus,
   Send,
   Star,
@@ -26,6 +27,7 @@ import {
 } from 'lucide-react';
 import './App.css';
 import { getStats, getWeather, submitContribution, sendChat } from './lib/api.js';
+import { getCurrentPosition, reverseGeocode } from './lib/geolocation.js';
 
 const tabs = [
   { id: 'beranda', label: 'Beranda', icon: Home },
@@ -128,6 +130,9 @@ function App() {
   const [weather, setWeather] = useState(null);
   const [stats, setStats] = useState(null);
   const [activeRange, setActiveRange] = useState('7 Hari');
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [locationError, setLocationError] = useState('');
+  const [userLocation, setUserLocation] = useState(null);
   const [chatMessages, setChatMessages] = useState([
     {
       id: 'welcome',
@@ -211,6 +216,35 @@ function App() {
     }
   };
 
+  const handleUseLocation = useCallback(async () => {
+    if (locationLoading) return;
+    setLocationLoading(true);
+    setLocationError('');
+
+    try {
+      const position = await getCurrentPosition();
+      const location = await reverseGeocode(position.lat, position.lng);
+      setUserLocation(location);
+
+      // Update report location too
+      setReportState((current) => ({ ...current, location: location.locationLabel }));
+
+      // Reload weather for the new location
+      try {
+        const weatherData = await getWeather(location.locationLabel);
+        setWeather(weatherData);
+      } catch (err) {
+        console.error('Gagal memuat cuaca untuk lokasi:', err);
+        setLocationError('Gagal memuat data cuaca untuk lokasi Anda.');
+      }
+    } catch (error) {
+      console.error(error);
+      setLocationError(error.message);
+    } finally {
+      setLocationLoading(false);
+    }
+  }, [locationLoading]);
+
   const handleSubmitReport = async () => {
     if (reportLoading) {
       return;
@@ -241,9 +275,22 @@ function App() {
 
   return (
     <div className="app-shell">
-      <TopBar activeTab={activeTab} weather={weather} />
+      <TopBar
+        activeTab={activeTab}
+        weather={weather}
+        locationLoading={locationLoading}
+        locationError={locationError}
+        onUseLocation={handleUseLocation}
+      />
       <main className="app-content">
-        {activeTab === 'beranda' && <HomeScreen weather={weather} />}
+        {activeTab === 'beranda' && (
+          <HomeScreen
+            weather={weather}
+            locationLoading={locationLoading}
+            locationError={locationError}
+            onUseLocation={handleUseLocation}
+          />
+        )}
         {activeTab === 'tanya' && (
           <ChatScreen
             messages={chatMessages}
@@ -273,7 +320,7 @@ function App() {
   );
 }
 
-function TopBar({ activeTab, weather }) {
+function TopBar({ activeTab, weather, locationLoading, locationError, onUseLocation }) {
   const isChat = activeTab === 'tanya';
   const isReport = activeTab === 'laporan';
   const activeWeather = weather || fallbackWeather;
@@ -328,20 +375,43 @@ function TopBar({ activeTab, weather }) {
           </div>
         </div>
         {!isReport ? (
-          <div className="avatar avatar--header" aria-hidden="true">
-            <span>PB</span>
-          </div>
+          <button
+            className={`locate-btn ${locationLoading ? 'locate-btn--loading' : ''}`}
+            type="button"
+            onClick={onUseLocation}
+            disabled={locationLoading}
+            aria-label="Gunakan lokasi saya"
+            title="Gunakan lokasi saya"
+          >
+            {locationLoading ? (
+              <span className="locate-btn__spinner" />
+            ) : (
+              <Navigation size={20} strokeWidth={2.3} />
+            )}
+          </button>
         ) : null}
       </div>
     </header>
   );
 }
 
-function HomeScreen({ weather }) {
+function HomeScreen({ weather, locationLoading, locationError, onUseLocation }) {
   const snapshot = weather || fallbackWeather;
 
   return (
     <div className="screen screen--home">
+      {locationError ? (
+        <div className="location-status location-status--error">
+          <span className="location-status__icon">⚠️</span>
+          <span>{locationError}</span>
+        </div>
+      ) : locationLoading ? (
+        <div className="location-status location-status--loading">
+          <span className="location-status__icon">📍</span>
+          <span>Mendapatkan lokasi Anda...</span>
+        </div>
+      ) : null}
+
       <section className="hero-card">
         <div className="hero-card__copy">
           <div className="hero-card__temp">{snapshot.current.temperature}°C</div>
