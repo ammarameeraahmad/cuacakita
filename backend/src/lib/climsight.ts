@@ -81,21 +81,12 @@ export async function createChatResponse(message: string, location?: string, loc
   const tools = buildTools(weather);
   const hasGroqKey = Boolean(process.env.GROQ_API_KEY);
   const userContext = userName ? ` (Pengguna: ${userName})` : '';
-
-  // Log data sent to AI
-  console.log('=== AI REQUEST LOG ===');
-  console.log('User message:', message);
-  console.log('Location:', location);
-  console.log('Location hints:', locationHints);
-  console.log('User name:', userName);
-  console.log('Conversation history:', conversationHistory);
-  console.log('Weather data:', JSON.stringify(weather, null, 2));
-  console.log('Knowledge hits:', knowledgeHits.map(hit => hit.content));
-  console.log('Tools:', tools.map(tool => ({ name: tool.name, description: tool.description })));
-  console.log('======================');
-
+  const validHistory: Message[] = conversationHistory
+    .slice(-5)
+    .filter(msg => ['system', 'user', 'assistant', 'tool'].includes(msg.role))
+    .map((msg): Message => ({ role: msg.role as 'system' | 'user' | 'assistant' | 'tool', content: msg.content }));
   const response = hasGroqKey
-    ? await runAgentLoop(message, tools, 3, conversationHistory, userContext)
+    ? await runAgentLoop(message, tools, 3, validHistory, userContext)
     : { finalAnswer: buildLocalChatAnswer(weather, knowledgeHits), conversationHistory: [], totalSteps: 0 };
 
   const cta = buildCta(message);

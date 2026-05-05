@@ -14,14 +14,9 @@ export async function runAgentLoop(
   userTask: string,
   tools: Tool[],
   maxSteps: number = 5,
-  conversationHistory: Array<{ role: string; content: string }> = [],
+  conversationHistory: Message[] = [],
   userContext: string = ''
 ): Promise<AgentResponse> {
-
-  const validHistory: Message[] = conversationHistory
-    .slice(-5)
-    .filter(msg => ['system', 'user', 'assistant', 'tool'].includes(msg.role))
-    .map((msg): Message => ({ role: msg.role as 'system' | 'user' | 'assistant' | 'tool', content: msg.content }));
 
   const messages = [
     { role: 'system', content: AGENTIC_RAG_SYSTEM_PROMPT },
