@@ -86,6 +86,12 @@ function normalizeName(name: string): string {
     .trim();
 }
 
+function getFirstDesaCode(db: LocationEntry[], adm4: string): string {
+  if (adm4.split('.').length === 4) return adm4;
+  const desa = db.find(e => e.type === 'desa' && e.adm4.startsWith(adm4 + '.'));
+  return desa ? desa.adm4 : adm4;
+}
+
 export function lookupAdm4Code(locationName: string): string | null {
   const db = loadDatabase();
   if (db.length === 0) return null;
@@ -95,61 +101,38 @@ export function lookupAdm4Code(locationName: string): string | null {
 
   if (searchTerms.length === 0) return null;
 
-  // For Yogyakarta-related searches, prioritize Yogyakarta province (34)
-  // Check both individual terms and the full location string
   const isYogyakartaQuery = searchTerms.some(term =>
     ['yogyakarta', 'jogja', 'jogjakarta', 'diy', 'daerah istimewa yogyakarta'].includes(normalizeName(term))
   ) || normalized.includes('yogyakarta') || normalized.includes('jogja');
 
-  // Try kecamatan level first (prefer districts over villages)
-  const kecamatans = db.filter((e) => e.type === 'kecamatan');
+  const allLevels = [
+    { type: 'desa', items: db.filter(e => e.type === 'desa') },
+    { type: 'kecamatan', items: db.filter(e => e.type === 'kecamatan') },
+    { type: 'kabupaten', items: db.filter(e => e.type === 'kabupaten') }
+  ];
 
-  // Prioritize the first term (usually the most specific location)
   const priorityTerms = [searchTerms[0], ...searchTerms.slice(1)];
 
-  for (const term of priorityTerms) {
-    const termNorm = normalizeName(term);
-    if (!termNorm) continue;
+  for (const level of allLevels) {
+    for (const term of priorityTerms) {
+      const termNorm = normalizeName(term);
+      if (!termNorm || termNorm.length < 3) continue;
 
-    // For Yogyakarta queries, prioritize Yogyakarta province kecamatans
-    let matches = kecamatans.filter((k) => {
-      const kName = normalizeName(k.name);
-      return kName.includes(termNorm) || termNorm.includes(kName);
-    });
+      let matches = level.items.filter((k) => {
+        const kName = normalizeName(k.name);
+        return kName === termNorm || kName.includes(termNorm);
+      });
 
-    if (isYogyakartaQuery) {
-      matches = matches.filter((k) => k.adm4.startsWith('34.'));
-    }
+      if (isYogyakartaQuery) {
+        matches = matches.filter((k) => k.adm4.startsWith('34.'));
+      }
 
-    if (matches.length > 0) {
-      // Return the first match (prioritize Yogyakarta province if applicable)
-      return matches[0].adm4;
-    }
-  }
-
-  // Try village level
-  const villages = db.filter((e) => e.type === 'desa');
-  for (const term of priorityTerms) {
-    const termNorm = normalizeName(term);
-    if (!termNorm) continue;
-
-    // For Yogyakarta queries, prioritize Yogyakarta province villages
-    let matches = villages.filter((v) => {
-      const vName = normalizeName(v.name);
-      return vName.includes(termNorm) || termNorm.includes(vName);
-    });
-
-    if (isYogyakartaQuery) {
-      matches = matches.filter((v) => v.adm4.startsWith('34.'));
-    }
-
-    if (matches.length > 0) {
-      // Return the first match (prioritize Yogyakarta province if applicable)
-      return matches[0].adm4;
+      if (matches.length > 0) {
+        return getFirstDesaCode(db, matches[0].adm4);
+      }
     }
   }
 
-  // Try city mappings for common cities
   for (const term of priorityTerms) {
     const termNorm = normalizeName(term);
     if (!termNorm) continue;
@@ -159,32 +142,19 @@ export function lookupAdm4Code(locationName: string): string | null {
       for (const mappedName of mappedNames) {
         const mappedNormalized = normalizeName(mappedName);
 
-        // Try kecamatans first for mapped names
-        let kecamatanMatches = kecamatans.filter((k) => {
-          const kName = normalizeName(k.name);
-          return kName.includes(mappedNormalized) || mappedNormalized.includes(kName);
-        });
+        for (const level of allLevels) {
+          let matches = level.items.filter((k) => {
+            const kName = normalizeName(k.name);
+            return kName === mappedNormalized || kName.includes(mappedNormalized);
+          });
 
-        if (isYogyakartaQuery) {
-          kecamatanMatches = kecamatanMatches.filter((k) => k.adm4.startsWith('34.'));
-        }
+          if (isYogyakartaQuery) {
+            matches = matches.filter((k) => k.adm4.startsWith('34.'));
+          }
 
-        if (kecamatanMatches.length > 0) {
-          return kecamatanMatches[0].adm4;
-        }
-
-        // Try villages for mapped names
-        let villageMatches = villages.filter((v) => {
-          const vName = normalizeName(v.name);
-          return vName.includes(mappedNormalized) || mappedNormalized.includes(vName);
-        });
-
-        if (isYogyakartaQuery) {
-          villageMatches = villageMatches.filter((v) => v.adm4.startsWith('34.'));
-        }
-
-        if (villageMatches.length > 0) {
-          return villageMatches[0].adm4;
+          if (matches.length > 0) {
+            return getFirstDesaCode(db, matches[0].adm4);
+          }
         }
       }
     }
