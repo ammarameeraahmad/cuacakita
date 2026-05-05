@@ -17,10 +17,15 @@ export async function runAgentLoop(
   conversationHistory: Array<{ role: string; content: string }> = []
 ): Promise<AgentResponse> {
 
+  const validHistory: Message[] = conversationHistory
+    .slice(-4)
+    .filter(msg => ['system', 'user', 'assistant', 'tool'].includes(msg.role))
+    .map(msg => ({ role: msg.role as 'system' | 'user' | 'assistant' | 'tool', content: msg.content }));
+
   const state: AgentState = {
     messages: [
       { role: 'system', content: AGENTIC_RAG_SYSTEM_PROMPT },
-      ...conversationHistory.slice(-4), // Include last 4 messages as context
+      ...validHistory, // Include last 4 valid messages as context
       { role: 'user', content: userTask }
     ],
     status: 'running',
