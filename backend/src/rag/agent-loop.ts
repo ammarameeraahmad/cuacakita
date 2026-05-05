@@ -18,24 +18,47 @@ export async function runAgentLoop(
   userContext: string = ''
 ): Promise<AgentResponse> {
 
-  const validHistory: Message[] = conversationHistory
-    .slice(-5)
-    .filter(msg => ['system', 'user', 'assistant', 'tool'].includes(msg.role))
-    .map((msg): Message => ({ role: msg.role as 'system' | 'user' | 'assistant' | 'tool', content: msg.content }));
+  // Build conversation context from history (last 5 messages)
+  let historyText = '';
+  if (conversationHistory.length > 0) {
+    historyText = '\n\nRiwayat percakapan:\n';
+    const recentHistory = conversationHistory.slice(-5);
+    recentHistory.forEach(msg => {
+      const role = msg.role === 'user' ? 'Pengguna' : msg.role === 'assistant' ? 'Asisten' : msg.role;
+      const content = typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content);
+      historyText += `${role}: ${content}\n`;
+    });
+  }
 
-  const messages = [
-    { role: 'system', content: AGENTIC_RAG_SYSTEM_PROMPT },
-    ...validHistory, // Include last 5 valid messages as context
-    { role: 'user', content: userTask + userContext }
-  ] as Message[];
+  // Execute tools to get BMKG and knowledge base data
+  const toolOutputs: string[] = [];
+  for (const tool of tools) {
+    try {
+      const output = await tool.execute(userTask);
+      toolOutputs.push(`${tool.name}: ${output}`);
+    } catch (error: any) {
+      toolOutputs.push(`${tool.name}: Error executing tool - ${error.message}`);
+    }
+  }
 
-  // Log initial messages with history
-  console.log('=== INITIAL MESSAGES (with history) ===');
-  console.log(JSON.stringify(messages, null, 2));
-  console.log('======================================');
+  // Log tool outputs
+  console.log('=== TOOL OUTPUTS ===');
+  toolOutputs.forEach((output, index) => {
+    console.log(`Tool ${index}:`, output.substring(0, 500));
+  });
+  console.log('====================');
+
+  // Build a CLEAN plain-text prompt (no JSON, no image references)
+  const bmkgData = toolOutputs.join('\n\n');
+  const fullPrompt = `${AGENTIC_RAG_SYSTEM_PROMPT}${historyText}\n\nData BMKG dan pengetahuan:\n${bmkgData}\n\nPertanyaan pengguna: ${userTask}${userContext}`;
+
+  // Log the complete prompt
+  console.log('=== COMPLETE PROMPT TO GROQ ===');
+  console.log(fullPrompt.substring(0, 2000));
+  console.log('=================================');
 
   const state: AgentState = {
-    messages,
+    messages: [{ role: 'user', content: fullPrompt }],
     status: 'running',
     maxSteps,
     currentStep: 0
@@ -44,41 +67,23 @@ export async function runAgentLoop(
   while (state.currentStep < state.maxSteps && state.status === 'running') {
     state.currentStep++;
 
-    const toolOutputs: string[] = [];
+    try {
+      const responseText = await callGroqChatCompletion([
+        { role: 'user', content: fullPrompt }
+      ]);
 
-    for (const tool of tools) {
-      try {
-        const output = await tool.execute(userTask);
-        toolOutputs.push(`${tool.name}: ${output}`);
-      } catch (error: any) {
-        toolOutputs.push(`${tool.name}: Error executing tool - ${error.message}`);
+      state.messages.push({
+        role: 'assistant',
+        content: responseText,
+      });
+      state.status = 'success';
+      break;
+    } catch (error: any) {
+      console.error('Error in agent loop:', error);
+      if (state.currentStep >= state.maxSteps - 1) {
+        state.status = 'failed';
       }
     }
-
-    // Add tool outputs as a system message to preserve conversation history
-    const toolContextMessage = `Konteks data BMKG dan pengetahuan:\n${toolOutputs.join('\n\n') || 'Tidak ada konteks alat yang tersedia.'}`;
-    
-    // Build final messages array WITH conversation history AND tool outputs
-    const messagesForGroq = [
-      ...messages, // Includes system prompt, history, and original user message
-      { role: 'system', content: toolContextMessage }
-    ] as Message[];
-
-    // Log COMPLETE prompt sent to Groq (including BMKG data)
-    console.log('=== COMPLETE PROMPT SENT TO GROQ ===');
-    console.log('Number of messages:', messagesForGroq.length);
-    console.log('Full messages array:');
-    console.log(JSON.stringify(messagesForGroq, null, 2));
-    console.log('=====================================');
-
-    const responseText = await callGroqChatCompletion(messagesForGroq);
-
-    state.messages.push({
-      role: 'assistant',
-      content: responseText,
-    });
-    state.status = 'success';
-    break;
   }
 
   if (state.status !== 'success') {
@@ -86,7 +91,7 @@ export async function runAgentLoop(
   }
 
   return {
-    finalAnswer: state.messages[state.messages.length - 1]?.content || '',
+    finalAnswer: state.messages[state.messages.length - 1]?.content || 'Maaf, terjadi kesalahan.',
     conversationHistory: state.messages,
     totalSteps: state.currentStep
   };

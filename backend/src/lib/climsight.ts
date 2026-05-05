@@ -40,11 +40,25 @@ function buildSources(weather: WeatherSnapshot, knowledgeHits: Document[]) {
 }
 
 function buildTools(weather: WeatherSnapshot): Tool[] {
+  // Sanitize weather object to remove any potential image fields
+  const sanitizedWeather = JSON.parse(JSON.stringify(weather));
+  if (sanitizedWeather.current?.icon) {
+    // Keep only emoji icons, remove any URL/path icons
+    const icon = sanitizedWeather.current.icon;
+    if (typeof icon === 'string' && (icon.includes('.png') || icon.includes('.jpg') || icon.includes('http'))) {
+      delete sanitizedWeather.current.icon;
+    }
+  }
+  
   return [
     {
       name: 'get_weather_info',
       description: 'Fetch current weather information from BMKG or fallback demo data.',
-      execute: async () => JSON.stringify(weather),
+      execute: async () => {
+        const jsonString = JSON.stringify(sanitizedWeather);
+        console.log('[Tool] get_weather_info output (first 300 chars):', jsonString.substring(0, 300));
+        return jsonString;
+      },
     },
     {
       name: 'search_climate_knowledge',

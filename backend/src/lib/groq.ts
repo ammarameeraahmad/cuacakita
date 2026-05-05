@@ -33,8 +33,11 @@ export async function callGroqChatCompletion(
     console.log('Temperature:', requestBody.temperature);
     console.log('Max Tokens:', requestBody.max_tokens);
     console.log('Number of messages:', messages.length);
-    console.log('Complete request body:');
-    console.log(JSON.stringify(requestBody, null, 2));
+    messages.forEach((msg, idx) => {
+      console.log(`Message ${idx}: role=${msg.role}, content type=${typeof msg.content}, content sample=`, String(msg.content).substring(0, 200));
+    });
+    console.log('Complete request body (stringified):');
+    console.log(JSON.stringify(requestBody));
     console.log('=======================');
 
     const response = await fetch(GROQ_ENDPOINT, {
