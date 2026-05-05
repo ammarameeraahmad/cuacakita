@@ -93,31 +93,34 @@ const fallbackWeather = {
   summary: 'Data BMKG belum tersedia, memakai data demo untuk Desa Sukamaju.',
 };
 
-function buildTemperaturePath(values) {
-  if (!values || values.length < 2) {
-    return 'M0,70 Q25,18 50,38 T100,58';
-  }
-
-  const maxValue = Math.max(...values);
-  const minValue = Math.min(...values);
+function buildTemperatureGeometry(values) {
+  const safeValues = values && values.length >= 2 ? values : [28, 30, 32, 31, 29];
+  const maxValue = Math.max(...safeValues);
+  const minValue = Math.min(...safeValues);
   const range = Math.max(maxValue - minValue, 1);
-  const step = 100 / (values.length - 1);
-  const points = values.map((value, index) => {
+  const step = 100 / (safeValues.length - 1);
+  const padTop = 18;
+  const padBottom = 82;
+  const points = safeValues.map((value, index) => {
     const x = index * step;
-    const y = 78 - ((value - minValue) / range) * 52;
-    return { x, y };
+    const y = padBottom - ((value - minValue) / range) * (padBottom - padTop);
+    return { x, y, value };
   });
 
-  let path = `M${points[0].x},${points[0].y}`;
-
+  let linePath = `M${points[0].x},${points[0].y}`;
   for (let index = 1; index < points.length; index += 1) {
     const previous = points[index - 1];
     const current = points[index];
     const midX = (previous.x + current.x) / 2;
-    path += ` Q${midX},${previous.y} ${current.x},${current.y}`;
+    linePath += ` Q${midX},${previous.y} ${current.x},${current.y}`;
   }
 
-  return path;
+  const areaPath = `${linePath} L${points[points.length - 1].x},100 L${points[0].x},100 Z`;
+
+  const maxIndex = safeValues.indexOf(maxValue);
+  const minIndex = safeValues.indexOf(minValue);
+
+  return { points, linePath, areaPath, maxIndex, minIndex, maxValue, minValue };
 }
 
 function App() {
@@ -628,99 +631,274 @@ function ReportScreen({ weather, reportState, onChangeReportState, onSubmit, sta
 
 function DataScreen({ weather, stats, activeRange, onRangeChange }) {
   const snapshot = weather || fallbackWeather;
-  const weatherChartPath = buildTemperaturePath(snapshot.temperatureSeries);
-  const rainfall = snapshot.rainfallSeries.map((value, index) => {
-    const labels = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum'];
+  const tempGeo = buildTemperatureGeometry(snapshot.temperatureSeries);
+  const rainSeries = snapshot.rainfallSeries && snapshot.rainfallSeries.length
+    ? snapshot.rainfallSeries
+    : [0, 12, 45, 20, 2];
+  const maxRain = Math.max(...rainSeries, 1);
+  const totalRain = rainSeries.reduce((acc, value) => acc + value, 0);
+  const peakRainIndex = rainSeries.indexOf(Math.max(...rainSeries));
+  const dayLabels = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+  const todayIndex = Math.min(2, rainSeries.length - 1);
+
+  const rainfall = rainSeries.map((value, index) => {
+    const ratio = value / maxRain;
+    let tone = 'muted';
+    if (ratio >= 0.75) tone = 'strong';
+    else if (ratio >= 0.45) tone = 'medium';
+    else if (ratio >= 0.15) tone = 'soft';
 
     return {
-      label: labels[index] || `H${index + 1}`,
+      label: dayLabels[index] || `H${index + 1}`,
       value: String(value),
-      height: `${Math.max(10, Math.min(132, value * 2.4))}px`,
-      tone: index === 2 ? 'strong' : index === 1 ? 'soft' : index === 3 ? 'medium' : 'muted',
+      ratio,
+      tone,
+      isToday: index === todayIndex,
+      isPeak: index === peakRainIndex && value > 0,
     };
   });
 
+  const avgTemp = Math.round(
+    snapshot.temperatureSeries.reduce((acc, value) => acc + value, 0) /
+      Math.max(1, snapshot.temperatureSeries.length)
+  );
+  const peakTempDay = snapshot.forecast?.[tempGeo.maxIndex]?.day || dayLabels[tempGeo.maxIndex];
+  const peakRainDay = snapshot.forecast?.[peakRainIndex]?.day || dayLabels[peakRainIndex];
+
+  const totalReports = stats?.totalContributions ?? 128;
+  const accepted = stats?.acceptedContributions ?? 110;
+  const coverage = Math.max(35, Math.min(98, Math.round((accepted / Math.max(totalReports, 1)) * 100)));
+
+  const ranges = ['7 Hari', '1 Bulan', '1 Tahun'];
+
   return (
     <div className="screen screen--data">
-      <header className="page-hero">
+      <header className="page-hero page-hero--data">
         <div className="page-hero__title-line">
           <div className="page-hero__icon">📊</div>
-          <h2>Tren Cuaca Lokal</h2>
+          <div>
+            <h2>Tren Cuaca Lokal</h2>
+            <p className="page-hero__subtitle">{snapshot.locationLabel} · Pantau pola cuaca desa</p>
+          </div>
         </div>
         <div className="time-tabs" role="tablist" aria-label="Rentang waktu">
-          <button className={`time-tab ${activeRange === '7 Hari' ? 'time-tab--active' : ''}`} type="button" onClick={() => onRangeChange('7 Hari')}>
-            7 Hari
-          </button>
-          <button className={`time-tab ${activeRange === '1 Bulan' ? 'time-tab--active' : ''}`} type="button" onClick={() => onRangeChange('1 Bulan')}>
-            1 Bulan
-          </button>
-          <button className={`time-tab ${activeRange === '1 Tahun' ? 'time-tab--active' : ''}`} type="button" onClick={() => onRangeChange('1 Tahun')}>
-            1 Tahun
-          </button>
+          {ranges.map((range) => (
+            <button
+              key={range}
+              type="button"
+              role="tab"
+              aria-selected={activeRange === range}
+              className={`time-tab ${activeRange === range ? 'time-tab--active' : ''}`}
+              onClick={() => onRangeChange(range)}
+            >
+              {range}
+            </button>
+          ))}
         </div>
       </header>
 
-      <section className="chart-card">
+      <section className="data-highlights">
+        <article className="highlight-card highlight-card--temp">
+          <div className="highlight-card__icon"><Thermometer size={20} /></div>
+          <div className="highlight-card__label">Rata-rata Suhu</div>
+          <div className="highlight-card__value">{avgTemp}°C</div>
+          <div className="highlight-card__hint">Tertinggi {tempGeo.maxValue}° · {peakTempDay}</div>
+        </article>
+        <article className="highlight-card highlight-card--rain">
+          <div className="highlight-card__icon"><CloudRain size={20} /></div>
+          <div className="highlight-card__label">Total Curah Hujan</div>
+          <div className="highlight-card__value">{totalRain}<span>mm</span></div>
+          <div className="highlight-card__hint">Puncak {Math.max(...rainSeries)}mm · {peakRainDay}</div>
+        </article>
+        <article className="highlight-card highlight-card--reports">
+          <div className="highlight-card__icon"><Trophy size={20} /></div>
+          <div className="highlight-card__label">Laporan Warga</div>
+          <div className="highlight-card__value">{totalReports}</div>
+          <div className="highlight-card__hint">Akurasi {Math.round((stats?.avgValidationScore ?? 0.85) * 100)}%</div>
+        </article>
+      </section>
+
+      <section className="chart-card chart-card--temperature">
         <div className="chart-card__header">
-          <h3>Suhu Harian</h3>
-          <Thermometer size={20} />
+          <div className="chart-card__heading">
+            <h3>Suhu Harian</h3>
+            <span className="chart-card__sub">{tempGeo.minValue}° – {tempGeo.maxValue}° Celsius</span>
+          </div>
+          <div className="chart-card__icon-circle chart-card__icon-circle--warm">
+            <Thermometer size={20} />
+          </div>
         </div>
+
         <div className="temperature-chart">
-          <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="temperature-chart__curve" aria-hidden="true">
+          <svg
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+            className="temperature-chart__svg"
+            aria-hidden="true"
+          >
             <defs>
-              <linearGradient id="curveGradient" x1="0" x2="1" y1="0" y2="0">
+              <linearGradient id="tempLineGradient" x1="0" x2="1" y1="0" y2="0">
                 <stop offset="0%" stopColor="#005d90" />
                 <stop offset="50%" stopColor="#a95f00" />
                 <stop offset="100%" stopColor="#005d90" />
               </linearGradient>
+              <linearGradient id="tempAreaGradient" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stopColor="#a95f00" stopOpacity="0.22" />
+                <stop offset="100%" stopColor="#005d90" stopOpacity="0" />
+              </linearGradient>
             </defs>
-            <path d={weatherChartPath} fill="none" stroke="url(#curveGradient)" strokeWidth="3" strokeLinecap="round" />
+
+            {[0, 25, 50, 75].map((y) => (
+              <line
+                key={y}
+                x1="0"
+                x2="100"
+                y1={y + 12}
+                y2={y + 12}
+                stroke="#e0e2e8"
+                strokeWidth="0.4"
+                strokeDasharray="1.2 1.6"
+              />
+            ))}
+
+            <path d={tempGeo.areaPath} fill="url(#tempAreaGradient)" />
+            <path
+              d={tempGeo.linePath}
+              fill="none"
+              stroke="url(#tempLineGradient)"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+
+            {tempGeo.points.map((point, index) => {
+              const isPeak = index === tempGeo.maxIndex;
+              const isLow = index === tempGeo.minIndex;
+              return (
+                <g key={`${point.x}-${index}`}>
+                  <circle
+                    cx={point.x}
+                    cy={point.y}
+                    r={isPeak || isLow ? 2.6 : 1.6}
+                    fill={isPeak ? '#a95f00' : isLow ? '#005d90' : '#ffffff'}
+                    stroke={isPeak ? '#a95f00' : '#005d90'}
+                    strokeWidth="1"
+                  />
+                </g>
+              );
+            })}
           </svg>
-          <div className="today-marker" />
-          <div className="chart-bubble chart-bubble--high">{Math.max(...snapshot.temperatureSeries)}°</div>
-          <div className="chart-bubble chart-bubble--low">{Math.min(...snapshot.temperatureSeries)}°</div>
+
+          {tempGeo.points.map((point, index) => {
+            if (index !== tempGeo.maxIndex && index !== tempGeo.minIndex) return null;
+            const isPeak = index === tempGeo.maxIndex;
+            return (
+              <div
+                key={`bubble-${index}`}
+                className={`temp-bubble ${isPeak ? 'temp-bubble--high' : 'temp-bubble--low'}`}
+                style={{
+                  left: `${point.x}%`,
+                  top: `${point.y}%`,
+                }}
+              >
+                {point.value}°
+              </div>
+            );
+          })}
+
+          {tempGeo.points[todayIndex] && (
+            <div
+              className="today-marker"
+              style={{ left: `${tempGeo.points[todayIndex].x}%` }}
+            />
+          )}
         </div>
+
         <div className="axis-labels">
           {snapshot.forecast.map((day, index) => (
-            <span key={day.day} className={index === 2 ? 'axis-labels__active' : ''}>
-              {day.day}{index === 2 ? ' (Kini)' : ''}
+            <span
+              key={`${day.day}-${index}`}
+              className={index === todayIndex ? 'axis-labels__active' : ''}
+            >
+              {day.day}
+              {index === todayIndex && <small> Kini</small>}
             </span>
           ))}
         </div>
       </section>
 
-      <section className="chart-card">
+      <section className="chart-card chart-card--rain">
         <div className="chart-card__header">
-          <h3>Curah Hujan</h3>
-          <CloudRain size={20} />
+          <div className="chart-card__heading">
+            <h3>Curah Hujan</h3>
+            <span className="chart-card__sub">{totalRain}mm dalam {rainSeries.length} hari</span>
+          </div>
+          <div className="chart-card__icon-circle chart-card__icon-circle--cool">
+            <CloudRain size={20} />
+          </div>
         </div>
+
         <div className="rain-chart">
-          {rainfall.map((bar) => (
-            <div key={bar.label} className="rain-chart__bar-group">
-              <div className={`rain-chart__drop rain-chart__drop--${bar.tone}`}>💧</div>
-              <div className="rain-chart__value">{bar.value}</div>
-              <div className={`rain-chart__bar rain-chart__bar--${bar.tone}`} style={{ height: bar.height }} />
-              <span className={`rain-chart__label ${bar.label === 'Rab' ? 'rain-chart__label--active' : ''}`}>{bar.label}</span>
+          {rainfall.map((bar, index) => (
+            <div key={`${bar.label}-${index}`} className="rain-bar">
+              <div className="rain-bar__value-wrap">
+                <Droplets
+                  className={`rain-bar__icon rain-bar__icon--${bar.tone}`}
+                  size={14}
+                />
+                <span className={`rain-bar__value rain-bar__value--${bar.tone}`}>
+                  {bar.value}
+                </span>
+              </div>
+              <div className="rain-bar__track">
+                <div
+                  className={`rain-bar__fill rain-bar__fill--${bar.tone} ${bar.isPeak ? 'rain-bar__fill--peak' : ''}`}
+                  style={{ height: `${Math.max(6, bar.ratio * 100)}%` }}
+                />
+              </div>
+              <span className={`rain-bar__label ${bar.isToday ? 'rain-bar__label--active' : ''}`}>
+                {bar.label}
+              </span>
             </div>
           ))}
+        </div>
+
+        <div className="rain-legend">
+          <span className="rain-legend__item"><span className="rain-legend__dot rain-legend__dot--muted" /> Cerah</span>
+          <span className="rain-legend__item"><span className="rain-legend__dot rain-legend__dot--soft" /> Ringan</span>
+          <span className="rain-legend__item"><span className="rain-legend__dot rain-legend__dot--medium" /> Sedang</span>
+          <span className="rain-legend__item"><span className="rain-legend__dot rain-legend__dot--strong" /> Lebat</span>
         </div>
       </section>
 
       <section className="reports-card">
         <div className="reports-card__title">
-          <Trophy size={22} />
-          <h3>{stats?.totalContributions ?? 128} Laporan Warga Hari Ini</h3>
+          <div className="reports-card__title-icon"><Trophy size={22} /></div>
+          <div>
+            <h3>{totalReports} Laporan Warga Hari Ini</h3>
+            <p className="reports-card__caption">Terima kasih sudah ikut bantu memantau cuaca!</p>
+          </div>
         </div>
+
         <div className="reports-card__meta">
           <span>Cakupan Wilayah</span>
-          <span className="reports-card__value">{Math.max(50, Math.min(98, Math.round((stats?.acceptedContributions ?? 85) / 13)))}%</span>
+          <span className="reports-card__value">{coverage}%</span>
         </div>
         <div className="progress-track">
-          <div className="progress-track__fill" style={{ width: `${Math.max(50, Math.min(98, Math.round((stats?.acceptedContributions ?? 85) / 13)))}%` }} />
+          <div
+            className="progress-track__fill"
+            style={{ width: `${coverage}%` }}
+          />
         </div>
-        <div className="coverage-pill">
-          <span aria-hidden="true">🗺️</span>
-          <span>{snapshot.summary}</span>
+
+        <div className="reports-card__footer">
+          <div className="coverage-pill">
+            <span aria-hidden="true">🗺️</span>
+            <span>{coverage >= 80 ? 'Wilayahmu sudah terlindungi' : 'Ajak warga lain untuk melapor'}</span>
+          </div>
+          {snapshot.summary && (
+            <p className="reports-card__summary">{snapshot.summary}</p>
+          )}
         </div>
       </section>
     </div>

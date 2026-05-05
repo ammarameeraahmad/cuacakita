@@ -852,25 +852,103 @@
   flex-shrink: 0;
 }
 
-.chart-card {
-  padding: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+/* ── Data Screen ─────────────────────────────── */
+
+.data-highlights {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
 }
 
-.chart-card__header,
-.reports-card__title,
-.leaderboard-card__title {
+.highlight-card {
+  min-height: 130px;
+  padding: 16px 14px;
+  border-radius: 20px;
+  background: #fff;
+  border: 1px solid #e0e2e8;
+  box-shadow: 0 0 12px rgba(0, 93, 144, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.highlight-card__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 2px;
+}
+
+.highlight-card--temp .highlight-card__icon {
+  background: #fff0dc;
+  color: #a95f00;
+}
+
+.highlight-card--rain .highlight-card__icon {
+  background: #dbeefe;
+  color: #005d90;
+}
+
+.highlight-card--reports .highlight-card__icon {
+  background: #d9f6ce;
+  color: #006e26;
+}
+
+.highlight-card__label {
+  color: #6b6f76;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.highlight-card__value {
+  color: #181c20;
+  font-size: 1.85rem;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.highlight-card__value span {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #6b6f76;
+  margin-left: 2px;
+}
+
+.highlight-card__hint {
+  color: #6b6f76;
+  font-size: 0.82rem;
+  font-weight: 500;
+  margin-top: auto;
+}
+
+/* ── Chart Card ──────────────────────────────── */
+
+.chart-card {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.chart-card__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
 
-.chart-card__header h3,
-.reports-card__title h3,
-.leaderboard-card__title h3 {
+.chart-card__heading {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.chart-card__header h3 {
   margin: 0;
   color: #181c20;
   font-size: 1.4rem;
@@ -878,14 +956,63 @@
   font-weight: 800;
 }
 
+.chart-card__sub {
+  color: #6b6f76;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.chart-card__icon-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.chart-card__icon-circle--warm {
+  background: #fff0dc;
+  color: #a95f00;
+}
+
+.chart-card__icon-circle--cool {
+  background: #dbeefe;
+  color: #005d90;
+}
+
+/* ── Temperature Chart ───────────────────────── */
+
 .temperature-chart {
   position: relative;
   height: 220px;
 }
 
-.temperature-chart__curve {
+.temperature-chart__svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.temp-bubble {
   position: absolute;
-  inset: 0;
+  padding: 4px 10px;
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 800;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  transform: translate(-50%, -120%);
+  white-space: nowrap;
+  z-index: 1;
+}
+
+.temp-bubble--high {
+  background: #a95f00;
+}
+
+.temp-bubble--low {
+  background: #005d90;
 }
 
 .today-marker {
@@ -894,28 +1021,6 @@
   bottom: 30px;
   left: 50%;
   border-left: 2px dashed rgba(169, 95, 0, 0.45);
-}
-
-.chart-bubble {
-  position: absolute;
-  padding: 8px 12px;
-  border-radius: 10px;
-  color: #ffffff;
-  font-size: 1rem;
-  font-weight: 800;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.chart-bubble--high {
-  top: 28px;
-  left: 18%;
-  background: #a95f00;
-}
-
-.chart-bubble--low {
-  right: 8%;
-  top: 120px;
-  background: #005d90;
 }
 
 .axis-labels {
@@ -933,89 +1038,201 @@
   font-weight: 800;
 }
 
+/* ── Rain Chart (Bar) ────────────────────────── */
+
 .rain-chart {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 10px;
-  min-height: 188px;
+  gap: 12px;
+  min-height: 200px;
 }
 
-.rain-chart__bar-group {
-  width: 100%;
+.rain-bar {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
+  gap: 6px;
+  min-width: 0;
 }
 
-.rain-chart__drop {
-  color: #707881;
-  font-size: 1rem;
+.rain-bar__value-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 22px;
 }
 
-.rain-chart__drop--soft,
-.rain-chart__drop--strong,
-.rain-chart__drop--medium {
+.rain-bar__icon {
+  flex-shrink: 0;
+}
+
+.rain-bar__icon--muted {
+  color: #bfc7d1;
+}
+
+.rain-bar__icon--soft {
+  color: #94ccff;
+}
+
+.rain-bar__icon--medium {
+  color: #3d7faa;
+}
+
+.rain-bar__icon--strong {
   color: #005d90;
 }
 
-.rain-chart__value {
+.rain-bar__value {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #6b6f76;
+}
+
+.rain-bar__value--soft,
+.rain-bar__value--medium,
+.rain-bar__value--strong {
   color: #005d90;
-  font-size: 1rem;
   font-weight: 800;
 }
 
-.rain-chart__bar {
+.rain-bar__track {
   width: 100%;
-  max-width: 72px;
+  max-width: 48px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
   border-radius: 8px 8px 4px 4px;
   background: #e0e2e8;
+  min-height: 8px;
 }
 
-.rain-chart__bar--muted {
+.rain-bar__fill {
+  width: 100%;
+  border-radius: 8px 8px 4px 4px;
+  transition: height 0.3s ease;
+  min-height: 6px;
+}
+
+.rain-bar__fill--muted {
   background: #e0e2e8;
 }
 
-.rain-chart__bar--soft {
+.rain-bar__fill--soft {
   background: #94ccff;
 }
 
-.rain-chart__bar--medium {
+.rain-bar__fill--medium {
   background: #3d7faa;
 }
 
-.rain-chart__bar--strong {
+.rain-bar__fill--strong {
   background: #005d90;
 }
 
-.rain-chart__label {
-  padding-top: 10px;
+.rain-bar__fill--peak {
+  box-shadow: 0 0 8px rgba(0, 93, 144, 0.3);
+}
+
+.rain-bar__label {
+  padding-top: 8px;
   color: #404850;
-  font-size: 1rem;
+  font-size: 0.88rem;
   font-weight: 500;
   border-top: 1px solid #e0e2e8;
   width: 100%;
   text-align: center;
 }
 
-.rain-chart__label--active {
+.rain-bar__label--active {
   color: #005d90;
   font-weight: 800;
 }
+
+/* ── Rain Legend ─────────────────────────────── */
+
+.rain-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 8px 0 2px;
+}
+
+.rain-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #404850;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.rain-legend__dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.rain-legend__dot--muted {
+  background: #e0e2e8;
+}
+
+.rain-legend__dot--soft {
+  background: #94ccff;
+}
+
+.rain-legend__dot--medium {
+  background: #3d7faa;
+}
+
+.rain-legend__dot--strong {
+  background: #005d90;
+}
+
+/* ── Reports Card (Data section) ─────────────── */
 
 .reports-card {
   padding: 18px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   border: 2px solid #6fff83;
 }
 
 .reports-card__title {
-  justify-content: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   color: #005d90;
+}
+
+.reports-card__title-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: #d9f6ce;
+  color: #006e26;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.reports-card__title h3 {
+  margin: 0;
+  color: #181c20;
+  font-size: 1.4rem;
+  line-height: 1.2;
+  font-weight: 800;
+}
+
+.reports-card__caption {
+  margin: 2px 0 0;
+  color: #6b6f76;
+  font-size: 0.88rem;
+  font-weight: 500;
 }
 
 .reports-card__meta {
@@ -1039,10 +1256,16 @@
 }
 
 .progress-track__fill {
-  width: 85%;
   height: 100%;
   border-radius: inherit;
-  background: #006e26;
+  background: linear-gradient(90deg, #94ccff, #006e26);
+  transition: width 0.5s ease;
+}
+
+.reports-card__footer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .coverage-pill {
@@ -1058,6 +1281,17 @@
   font-size: 1rem;
   font-weight: 800;
 }
+
+.reports-card__summary {
+  margin: 0;
+  color: #6b6f76;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  font-weight: 500;
+  font-style: italic;
+}
+
+/* ── Chat Composer ───────────────────────────── */
 
 .composer {
   display: grid;
@@ -1231,6 +1465,21 @@
   gap: 14px;
 }
 
+.leaderboard-card__title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #005d90;
+}
+
+.leaderboard-card__title h3 {
+  margin: 0;
+  color: #181c20;
+  font-size: 1.4rem;
+  line-height: 1.2;
+  font-weight: 800;
+}
+
 .leaderboard-list {
   display: flex;
   flex-direction: column;
@@ -1354,6 +1603,14 @@
   .advice-card__lead {
     font-size: 1.45rem;
   }
+
+  .data-highlights {
+    grid-template-columns: 1fr;
+  }
+  
+  .highlight-card {
+    min-height: 100px;
+  }
 }
 
 @media (min-width: 1024px) {
@@ -1400,5 +1657,9 @@
 
   .app-content {
     padding-bottom: 24px;
+  }
+
+  .data-highlights {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
