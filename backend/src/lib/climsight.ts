@@ -74,14 +74,15 @@ function buildLocalChatAnswer(weather: WeatherSnapshot, knowledgeHits: Document[
   return [summary, detail, forecast, knowledge].filter(Boolean).join(' ');
 }
 
-export async function createChatResponse(message: string, location?: string, locationHints: string[] = [], conversationHistory: Array<{ role: string; content: string }> = []) {
+export async function createChatResponse(message: string, location?: string, locationHints: string[] = [], conversationHistory: Array<{ role: string; content: string }> = [], userName?: string) {
   await recordQuery();
   const weather = await getWeatherSnapshot(location, locationHints);
   const knowledgeHits = await searchClimateKnowledge(message, 3);
   const tools = buildTools(weather);
   const hasGroqKey = Boolean(process.env.GROQ_API_KEY);
+  const userContext = userName ? ` (Pengguna: ${userName})` : '';
   const response = hasGroqKey
-    ? await runAgentLoop(message, tools, 3, conversationHistory)
+    ? await runAgentLoop(message, tools, 3, conversationHistory, userContext)
     : { finalAnswer: buildLocalChatAnswer(weather, knowledgeHits), conversationHistory: [], totalSteps: 0 };
 
   const cta = buildCta(message);

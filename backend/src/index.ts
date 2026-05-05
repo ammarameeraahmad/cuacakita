@@ -12,14 +12,14 @@ app.use(express.json());
 // POST /api/chat
 app.post('/api/chat', async (req, res) => {
   try {
-    const { message, location, locationHints, history } = req.body;
+    const { message, location, locationHints, history, userName } = req.body;
     if (!message) {
       return res.status(400).json({ error: 'Message is required' });
     }
 
     const hints = Array.isArray(locationHints) ? locationHints.filter(Boolean) : [];
     const conversationHistory = Array.isArray(history) ? history : [];
-    const response = await createChatResponse(message, location, hints, conversationHistory);
+    const response = await createChatResponse(message, location, hints, conversationHistory, userName);
 
     res.json(response);
   } catch (error) {

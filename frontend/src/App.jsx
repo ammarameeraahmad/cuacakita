@@ -261,7 +261,8 @@ function App() {
     setChatMessages((current) => [...current, newUserMessage]);
     try {
       const locationLabel = weather?.locationLabel || locationContext?.locationLabel || reportState.location || 'Desa Sukamaju, 12 Okt';
-      const response = await sendChat(text, locationLabel, buildLocationHints(locationContext), history);
+      const userName = profile?.displayName || 'pengguna';
+      const response = await sendChat(text, locationLabel, buildLocationHints(locationContext), history, userName);
       setChatMessages((current) => [...current, { id: `assistant-${Date.now()}`, role: 'assistant', content: response.answer }]);
     } catch {
       setChatMessages((current) => [...current, { id: `error-${Date.now()}`, role: 'assistant', content: 'Maaf, AI sedang tidak bisa dihubungi. Coba lagi beberapa saat.' }]);

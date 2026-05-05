@@ -14,7 +14,8 @@ export async function runAgentLoop(
   userTask: string,
   tools: Tool[],
   maxSteps: number = 5,
-  conversationHistory: Array<{ role: string; content: string }> = []
+  conversationHistory: Array<{ role: string; content: string }> = [],
+  userContext: string = ''
 ): Promise<AgentResponse> {
 
   const validHistory: Message[] = conversationHistory
@@ -25,8 +26,8 @@ export async function runAgentLoop(
   const state: AgentState = {
     messages: [
       { role: 'system', content: AGENTIC_RAG_SYSTEM_PROMPT },
-      ...validHistory, // Include last 4 valid messages as context
-      { role: 'user', content: userTask }
+      ...validHistory, // Include last 5 valid messages as context
+      { role: 'user', content: userTask + userContext }
     ],
     status: 'running',
     maxSteps,
