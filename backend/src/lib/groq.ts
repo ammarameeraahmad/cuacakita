@@ -31,7 +31,7 @@ export async function callGroqChatCompletion(
     console.log('Endpoint:', GROQ_ENDPOINT);
     console.log('Model:', requestBody.model);
     console.log('Temperature:', requestBody.temperature);
-    console.log('Max Tokens:', requestBody.maxTokens ?? 700);
+    console.log('Max Tokens:', requestBody.max_tokens);
     console.log('Number of messages:', messages.length);
     console.log('Complete request body:');
     console.log(JSON.stringify(requestBody, null, 2));
