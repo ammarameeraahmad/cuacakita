@@ -95,7 +95,11 @@ export async function createChatResponse(message: string, location?: string, loc
   console.log('User name:', userName);
   console.log('=====================================');
 
-  await recordQuery();
+  try {
+    await recordQuery();
+  } catch (error) {
+    console.error('Failed to record query:', error);
+  }
   const weather = await getWeatherSnapshot(location, locationHints);
   const knowledgeHits = await searchClimateKnowledge(message, 3);
   const tools = buildTools(weather);

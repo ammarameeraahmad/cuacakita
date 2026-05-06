@@ -198,31 +198,40 @@ function App() {
         let locationName = 'Desa Sukamaju, 12 Okt';
         let locationHints = {};
         try {
-          const position = await getCurrentPosition({ timeout: 5000 });
-          const location = await reverseGeocode(position.lat, position.lng);
-          if (location.locationLabel) {
-            locationName = location.locationLabel;
-            locationHints = {
-              adm4Hint: location.adm4Hint,
-              village: location.village,
-              district: location.district,
-              city: location.city,
-              regency: location.regency,
-              province: location.province,
-            };
-            if (!cancelled) {
-              setLocationContext(location);
-              setLocationError('');
+          const position = await getCurrentPosition({ timeout: 15000 });
+          try {
+            const location = await reverseGeocode(position.lat, position.lng);
+            if (location.locationLabel) {
+              locationName = location.locationLabel;
+              locationHints = {
+                adm4Hint: location.adm4Hint,
+                village: location.village,
+                district: location.district,
+                city: location.city,
+                regency: location.regency,
+                province: location.province,
+              };
+              if (!cancelled) {
+                setLocationContext(location);
+                setLocationError('');
+              }
+              if (!cancelled) {
+                setReportState((current) => ({ ...current, location: location.locationLabel }));
+              }
+            } else {
+              if (!cancelled) {
+                setLocationError('Lokasi berhasil didapatkan, tetapi alamat tidak dapat dikonversi. Menggunakan lokasi default.');
+              }
             }
+          } catch {
             if (!cancelled) {
-              setReportState((current) => ({ ...current, location: location.locationLabel }));
+              setLocationError('Gagal mengonversi koordinat ke alamat. Menggunakan lokasi default.');
             }
           }
-        } catch (error) {
-          // Geolocation failed, use default
+        } catch {
           console.log('Auto-location failed, using default');
           if (!cancelled) {
-            setLocationError('Gagal mendapatkan lokasi perangkat. Menggunakan lokasi default.');
+            setLocationError('Tidak dapat mengakses lokasi perangkat. Pastikan izin lokasi diaktifkan dan coba lagi.');
           }
         }
 
@@ -286,26 +295,31 @@ function App() {
     setLocationLoading(true);
     setLocationError('');
     try {
-      const position = await getCurrentPosition();
-      const location = await reverseGeocode(position.lat, position.lng);
-      setReportState((current) => ({ ...current, location: location.locationLabel }));
-      setLocationContext(location);
+      const position = await getCurrentPosition({ timeout: 15000 });
       try {
-        const weatherData = await getWeather({
-          location: location.locationLabel,
-          adm4Hint: location.adm4Hint,
-          village: location.village,
-          district: location.district,
-          city: location.city,
-          regency: location.regency,
-          province: location.province,
-        });
-        setWeather(weatherData);
+        const location = await reverseGeocode(position.lat, position.lng);
+        setReportState((current) => ({ ...current, location: location.locationLabel }));
+        setLocationContext(location);
+        setLocationError('');
+        try {
+          const weatherData = await getWeather({
+            location: location.locationLabel,
+            adm4Hint: location.adm4Hint,
+            village: location.village,
+            district: location.district,
+            city: location.city,
+            regency: location.regency,
+            province: location.province,
+          });
+          setWeather(weatherData);
+        } catch {
+          setLocationError('Lokasi berhasil didapatkan, tetapi gagal memuat data cuaca.');
+        }
       } catch {
-        setLocationError('Gagal memuat data cuaca untuk lokasi Anda.');
+        setLocationError('Lokasi berhasil didapatkan, tetapi gagal mengonversi ke alamat.');
       }
-    } catch (error) {
-      setLocationError(error.message);
+    } catch {
+      setLocationError('Tidak dapat mengakses lokasi perangkat. Pastikan izin lokasi diaktifkan.');
     } finally {
       setLocationLoading(false);
     }
@@ -352,8 +366,8 @@ function App() {
     <div className="app-shell">
       <TopBar activeTab={activeTab} weather={weather} locationLoading={locationLoading} locationError={locationError} onUseLocation={handleUseLocation} />
       <main className="app-content">
-        {activeTab === 'beranda' && <HomeScreen weather={weather} locationLoading={locationLoading} locationError={locationError} onUseLocation={handleUseLocation} />}
-        {activeTab === 'tanya' && <ChatScreen messages={chatMessages} inputValue={chatInput} loading={chatLoading} onInputChange={setChatInput} onSubmit={handleSendChat} />}
+        {activeTab === 'beranda' && <HomeScreen weather={weather} />}
+        {activeTab === 'tanya' && <TopBar activeTab={activeTab} weather={weather} locationLoading={locationLoading} locationError={locationError} onUseLocation={handleUseLocation} />}
         {activeTab === 'laporan' && <ReportScreen weather={weather} reportState={reportState} onChangeReportState={setReportState} onSubmit={handleSubmitReport} status={reportStatus} loading={reportLoading} />}
         {activeTab === 'data' && <DataScreen weather={weather} stats={stats} activeRange={activeRange} onRangeChange={setActiveRange} />}
         {activeTab === 'profil' && (
@@ -374,7 +388,7 @@ function App() {
   );
 }
 
-function TopBar({ activeTab, weather, locationLoading, onUseLocation }) {
+function TopBar({ activeTab, weather, locationLoading, locationError, onUseLocation }) {
   const isChat = activeTab === 'tanya';
   const isReport = activeTab === 'laporan';
   const activeWeather = weather || fallbackWeather;
@@ -390,6 +404,7 @@ function TopBar({ activeTab, weather, locationLoading, onUseLocation }) {
           </div>
         </div>
       </div>
+      {locationError && <div className="location-status location-status--error"><span className="location-status__icon">⚠️</span><span>{locationError}</span></div>}
     </header>
   );
 
@@ -405,6 +420,7 @@ function TopBar({ activeTab, weather, locationLoading, onUseLocation }) {
         </div>
         <button className="icon-button" type="button" aria-label="Menu lainnya"><MoreVertical size={24} /></button>
       </div>
+      {locationError && <div className="location-status location-status--error"><span className="location-status__icon">⚠️</span><span>{locationError}</span></div>}
     </header>
   );
 
@@ -422,21 +438,16 @@ function TopBar({ activeTab, weather, locationLoading, onUseLocation }) {
           {locationLoading ? <span className="locate-btn__spinner" /> : <Navigation size={20} strokeWidth={2.3} />}
         </button>
       </div>
+      {locationError && <div className="location-status location-status--error"><span className="location-status__icon">⚠️</span><span>{locationError}</span></div>}
     </header>
   );
 }
 
-function HomeScreen({ weather, locationLoading, locationError }) {
+function HomeScreen({ weather }) {
   const snapshot = weather || fallbackWeather;
 
   return (
     <div className="screen screen--home">
-      {locationError ? (
-        <div className="location-status location-status--error"><span className="location-status__icon">⚠️</span><span>{locationError}</span></div>
-      ) : locationLoading ? (
-        <div className="location-status location-status--loading"><span className="location-status__icon">📍</span><span>Mendapatkan lokasi Anda...</span></div>
-      ) : null}
-
       <section className="hero-card">
         <div className="hero-card__copy">
           <div className="hero-card__temp">{snapshot.current.temperature}°C</div>

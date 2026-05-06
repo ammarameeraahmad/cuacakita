@@ -41,13 +41,18 @@ async function updateStats(mutator: (draft: DashboardState) => void) {
   }
 
   const ref = db.ref('stats/global');
-  const result = await ref.transaction((current: any) => {
-    const next = coerceState(current as DashboardState | null | undefined);
-    mutator(next);
-    return next;
-  });
+  try {
+    const result = await ref.transaction((current: any) => {
+      const next = coerceState(current as DashboardState | null | undefined);
+      mutator(next);
+      return next;
+    });
 
-  return coerceState(result.snapshot?.val() as DashboardState | null | undefined);
+    return coerceState(result.snapshot?.val() as DashboardState | null | undefined);
+  } catch (error) {
+    mutator(state);
+    return state;
+  }
 }
 
 export async function recordQuery() {
@@ -74,10 +79,18 @@ export async function getDashboardStats() {
   let currentState = state;
 
   if (db) {
-    const snapshot = await db.ref('stats/global').get();
-    currentState = coerceState(snapshot.val() as DashboardState | null | undefined);
-    if (!snapshot.exists()) {
-      await db.ref('stats/global').set(currentState);
+    try {
+      const snapshot = await db.ref('stats/global').get();
+      currentState = coerceState(snapshot.val() as DashboardState | null | undefined);
+      if (!snapshot.exists()) {
+        try {
+          await db.ref('stats/global').set(currentState);
+        } catch (error) {
+          // Ignore set failure
+        }
+      }
+    } catch (error) {
+      // Use local state
     }
   }
 

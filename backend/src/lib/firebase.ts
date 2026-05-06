@@ -31,15 +31,20 @@ export function getFirebaseDb(): admin.database.Database | null {
   if (!isFirebaseConfigured()) return null;
 
   if (!firebaseApp) {
-    const config = getFirebaseConfig();
-    firebaseApp = admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId: config.projectId,
-        clientEmail: config.clientEmail,
-        privateKey: config.privateKey,
-      }),
-      databaseURL: config.databaseURL,
-    });
+    try {
+      const config = getFirebaseConfig();
+      firebaseApp = admin.initializeApp({
+        credential: admin.credential.cert({
+          projectId: config.projectId,
+          clientEmail: config.clientEmail,
+          privateKey: config.privateKey,
+        }),
+        databaseURL: config.databaseURL,
+      });
+    } catch (error) {
+      firebaseApp = null;
+      return null;
+    }
   }
 
   return admin.database(firebaseApp);
