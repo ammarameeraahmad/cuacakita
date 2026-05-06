@@ -76,7 +76,7 @@ const defaultLeaderboard = [
 const defaultProfile = {
   displayName: 'Pak Budi',
   tagline: 'Petani Cuaca Andal',
-  location: 'Sleman, Yogyakarta',
+  location: null,
   avatarInitials: 'PB',
   rating: 4,
 };
@@ -98,26 +98,26 @@ const defaultCommunity = {
 };
 
 const fallbackWeather = {
-  locationLabel: 'Lokasi belum tersedia',
-  subLabel: 'Menunggu data BMKG',
+  locationLabel: 'Lokasi diperlukan',
+  subLabel: 'Aktifkan lokasi untuk data cuaca',
   current: {
     temperature: 0,
-    description: 'Data belum tersedia',
+    description: 'Lokasi belum diaktifkan',
     humidity: 0,
     windSpeed: 0,
     visibility: 0,
-    icon: '☁️',
+    icon: '📍',
   },
   forecast: [
-    { day: 'SEN', label: 'Senin', description: 'Menunggu data', icon: '☁️', high: 0, low: 0, rainChance: 0 },
-    { day: 'SEL', label: 'Selasa', description: 'Menunggu data', icon: '☁️', high: 0, low: 0, rainChance: 0 },
-    { day: 'RAB', label: 'Rabu', description: 'Menunggu data', icon: '☁️', high: 0, low: 0, rainChance: 0 },
-    { day: 'KAM', label: 'Kamis', description: 'Menunggu data', icon: '☁️', high: 0, low: 0, rainChance: 0 },
-    { day: 'JUM', label: 'Jumat', description: 'Menunggu data', icon: '☁️', high: 0, low: 0, rainChance: 0 },
+    { day: 'SEN', label: 'Senin', description: 'Menunggu lokasi', icon: '📍', high: 0, low: 0, rainChance: 0 },
+    { day: 'SEL', label: 'Selasa', description: 'Menunggu lokasi', icon: '📍', high: 0, low: 0, rainChance: 0 },
+    { day: 'RAB', label: 'Rabu', description: 'Menunggu lokasi', icon: '📍', high: 0, low: 0, rainChance: 0 },
+    { day: 'KAM', label: 'Kamis', description: 'Menunggu lokasi', icon: '📍', high: 0, low: 0, rainChance: 0 },
+    { day: 'JUM', label: 'Jumat', description: 'Menunggu lokasi', icon: '📍', high: 0, low: 0, rainChance: 0 },
   ],
   temperatureSeries: [0, 0, 0, 0, 0],
   rainfallSeries: [0, 0, 0, 0, 0],
-  summary: 'Data BMKG belum tersedia. Coba lagi beberapa saat.',
+  summary: 'Aktifkan lokasi perangkat untuk memuat data cuaca.',
 };
 
 function buildLocationHints(location) {
@@ -151,7 +151,7 @@ function App() {
   const [achievements, setAchievements] = useState(defaultAchievements);
   const [leaderboard, setLeaderboard] = useState(defaultLeaderboard);
   const [reportState, setReportState] = useState({
-    location: defaultProfile.location,
+    location: null,
     condition: 'Hujan',
     intensity: 'Sedang',
     temperature: 28,
@@ -192,57 +192,57 @@ function App() {
       );
     }
 
-    const loadData = async () => {
-      try {
-        // Try to auto-detect location
-        let locationName = 'Desa Sukamaju, 12 Okt';
-        let locationHints = {};
+      const loadData = async () => {
         try {
-          const position = await getCurrentPosition({ timeout: 15000 });
+          // Try to auto-detect location
+          let locationName = null;
+          let locationHints = {};
           try {
-            const location = await reverseGeocode(position.lat, position.lng);
-            if (location.locationLabel) {
-              locationName = location.locationLabel;
-              locationHints = {
-                adm4Hint: location.adm4Hint,
-                village: location.village,
-                district: location.district,
-                city: location.city,
-                regency: location.regency,
-                province: location.province,
-              };
-              if (!cancelled) {
-                setLocationContext(location);
-                setLocationError('');
+            const position = await getCurrentPosition({ timeout: 15000 });
+            try {
+              const location = await reverseGeocode(position.lat, position.lng);
+              if (location.locationLabel) {
+                locationName = location.locationLabel;
+                locationHints = {
+                  adm4Hint: location.adm4Hint,
+                  village: location.village,
+                  district: location.district,
+                  city: location.city,
+                  regency: location.regency,
+                  province: location.province,
+                };
+                if (!cancelled) {
+                  setLocationContext(location);
+                  setLocationError('');
+                  setReportState((current) => ({ ...current, location: location.locationLabel }));
+                }
+              } else {
+                if (!cancelled) {
+                  setLocationError('Lokasi berhasil didapatkan, tetapi alamat tidak dapat dikonversi.');
+                }
               }
+            } catch {
               if (!cancelled) {
-                setReportState((current) => ({ ...current, location: location.locationLabel }));
-              }
-            } else {
-              if (!cancelled) {
-                setLocationError('Lokasi berhasil didapatkan, tetapi alamat tidak dapat dikonversi. Menggunakan lokasi default.');
+                setLocationError('Gagal mengonversi koordinat ke alamat.');
               }
             }
           } catch {
+            console.log('Auto-location failed');
             if (!cancelled) {
-              setLocationError('Gagal mengonversi koordinat ke alamat. Menggunakan lokasi default.');
+              setLocationError('Tidak dapat mengakses lokasi perangkat. Pastikan izin lokasi diaktifkan dan coba lagi.');
             }
           }
-        } catch {
-          console.log('Auto-location failed, using default');
-          if (!cancelled) {
-            setLocationError('Tidak dapat mengakses lokasi perangkat. Pastikan izin lokasi diaktifkan dan coba lagi.');
+
+          if (locationName) {
+            const weatherResponse = await getWeather({ location: locationName, ...locationHints });
+            if (!cancelled) setWeather(weatherResponse);
           }
-        }
 
-        const weatherResponse = await getWeather({ location: locationName, ...locationHints });
-        if (!cancelled) setWeather(weatherResponse);
-
-        if (!isFirebaseEnabled()) {
-          const statsResponse = await getStats();
-          if (!cancelled) setStats(statsResponse);
-        }
-      } catch (error) { console.error(error); }
+          if (!isFirebaseEnabled()) {
+            const statsResponse = await getStats();
+            if (!cancelled) setStats(statsResponse);
+          }
+        } catch (error) { console.error(error); }
     };
     loadData();
     return () => {
@@ -277,8 +277,15 @@ function App() {
     setChatLoading(true);
     setChatMessages((current) => [...current, newUserMessage]);
 
+    const locationLabel = weather?.locationLabel || locationContext?.locationLabel || reportState.location;
+    if (!locationLabel) {
+      setChatMessages((current) => [...current, { id: `error-${Date.now()}`, role: 'assistant', content: 'Lokasi tidak tersedia. Silakan atur lokasi Anda terlebih dahulu.' }]);
+      setChatLoading(false);
+      setChatInput('');
+      return;
+    }
+
     try {
-      const locationLabel = weather?.locationLabel || locationContext?.locationLabel || reportState.location || 'Desa Sukamaju, 12 Okt';
       const userName = profile?.displayName || 'pengguna';
       const response = await sendChat(text, locationLabel, buildLocationHints(locationContext), historyBefore, userName);
       setChatMessages((current) => [...current, { id: `assistant-${Date.now()}`, role: 'assistant', content: response.answer }]);
@@ -301,20 +308,16 @@ function App() {
         setReportState((current) => ({ ...current, location: location.locationLabel }));
         setLocationContext(location);
         setLocationError('');
-        try {
-          const weatherData = await getWeather({
-            location: location.locationLabel,
-            adm4Hint: location.adm4Hint,
-            village: location.village,
-            district: location.district,
-            city: location.city,
-            regency: location.regency,
-            province: location.province,
-          });
-          setWeather(weatherData);
-        } catch {
-          setLocationError('Lokasi berhasil didapatkan, tetapi gagal memuat data cuaca.');
-        }
+        const weatherData = await getWeather({
+          location: location.locationLabel,
+          adm4Hint: location.adm4Hint,
+          village: location.village,
+          district: location.district,
+          city: location.city,
+          regency: location.regency,
+          province: location.province,
+        });
+        setWeather(weatherData);
       } catch {
         setLocationError('Lokasi berhasil didapatkan, tetapi gagal mengonversi ke alamat.');
       }
@@ -366,7 +369,7 @@ function App() {
     <div className="app-shell">
       <TopBar activeTab={activeTab} weather={weather} locationLoading={locationLoading} locationError={locationError} onUseLocation={handleUseLocation} />
       <main className="app-content">
-        {activeTab === 'beranda' && <HomeScreen weather={weather} />}
+        {activeTab === 'beranda' && <HomeScreen weather={weather} locationError={locationError} />}
         {activeTab === 'tanya' && <TopBar activeTab={activeTab} weather={weather} locationLoading={locationLoading} locationError={locationError} onUseLocation={handleUseLocation} />}
         {activeTab === 'laporan' && <ReportScreen weather={weather} reportState={reportState} onChangeReportState={setReportState} onSubmit={handleSubmitReport} status={reportStatus} loading={reportLoading} />}
         {activeTab === 'data' && <DataScreen weather={weather} stats={stats} activeRange={activeRange} onRangeChange={setActiveRange} />}
@@ -443,8 +446,26 @@ function TopBar({ activeTab, weather, locationLoading, locationError, onUseLocat
   );
 }
 
-function HomeScreen({ weather }) {
-  const snapshot = weather || fallbackWeather;
+function HomeScreen({ weather, locationError }) {
+  if (!weather) {
+    return (
+      <div className="screen screen--home">
+        <section className="hero-card">
+          <div className="hero-card__copy">
+            <div className="hero-card__temp">Lokasi Diperlukan</div>
+            <div className="hero-pill">DATA CUACA TIDAK DAPAT DIMUAT</div>
+          </div>
+          <div className="hero-card__art" aria-hidden="true">
+            <div className="hero-card__art-window">
+              <div className="hero-cloud hero-cloud--big" /><div className="hero-cloud hero-cloud--small" />
+            </div>
+          </div>
+          <p style={{ textAlign: 'center', margin: '1rem' }}>{locationError || 'Aktifkan lokasi perangkat untuk memuat data cuaca.'}</p>
+        </section>
+      </div>
+    );
+  }
+  const snapshot = weather;
 
   return (
     <div className="screen screen--home">
@@ -610,7 +631,23 @@ function ReportScreen({ weather, reportState, onChangeReportState, onSubmit, sta
 }
 
 function DataScreen({ weather, stats, activeRange, onRangeChange }) {
-  const snapshot = weather || fallbackWeather;
+  if (!weather) {
+    return (
+      <div className="screen screen--data">
+        <header className="page-hero page-hero--data">
+          <div className="page-hero__title-line">
+            <div className="page-hero__icon">📊</div>
+            <div>
+              <h2>Tren Cuaca Lokal</h2>
+              <p className="page-hero__subtitle">Lokasi diperlukan untuk memuat data</p>
+            </div>
+          </div>
+        </header>
+        <p style={{ textAlign: 'center', margin: '2rem' }}>Aktifkan lokasi perangkat untuk melihat tren cuaca.</p>
+      </div>
+    );
+  }
+  const snapshot = weather;
   const dayLabels = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
 
   // ── Temperature bars ──
@@ -773,7 +810,7 @@ function ProfileScreen({ stats, weather, profile, achievements, leaderboard, onS
   const [formState, setFormState] = useState({
     displayName: safeProfile.displayName,
     tagline: safeProfile.tagline,
-    location: safeProfile.location,
+    location: safeProfile.location || '',
     avatarInitials: safeProfile.avatarInitials,
   });
 
@@ -781,7 +818,7 @@ function ProfileScreen({ stats, weather, profile, achievements, leaderboard, onS
     setFormState({
       displayName: safeProfile.displayName,
       tagline: safeProfile.tagline,
-      location: safeProfile.location,
+      location: safeProfile.location || '',
       avatarInitials: safeProfile.avatarInitials,
     });
   }, [safeProfile.displayName, safeProfile.tagline, safeProfile.location, safeProfile.avatarInitials]);

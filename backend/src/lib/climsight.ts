@@ -88,7 +88,7 @@ function buildLocalChatAnswer(weather: WeatherSnapshot, knowledgeHits: Document[
   return [summary, detail, forecast, knowledge].filter(Boolean).join(' ');
 }
 
-export async function createChatResponse(message: string, location?: string, locationHints: string[] = [], conversationHistory: Array<{ role: string; content: string }> = [], userName?: string) {
+export async function createChatResponse(message: string, location: string, locationHints: string[] = [], conversationHistory: Array<{ role: string; content: string }> = [], userName?: string) {
   console.log('=== BACKEND: Received chat request ===');
   console.log('Message:', message);
   console.log('Conversation history:', conversationHistory);
@@ -124,12 +124,12 @@ export async function createChatResponse(message: string, location?: string, loc
   };
 }
 
-export async function createWeatherResponse(input?: { location?: string; locationHints?: string[] }) {
-  return getWeatherSnapshot(input?.location, input?.locationHints ?? []);
+export async function createWeatherResponse(input: { location: string; locationHints?: string[] }) {
+  return getWeatherSnapshot(input.location, input.locationHints ?? []);
 }
 
 export async function createContributionResponse(input: {
-  location?: string;
+  location: string;
   locationHints?: string[];
   conditions?: { temperature?: number; general_condition?: string; rainfall_intensity?: string };
   description?: string;

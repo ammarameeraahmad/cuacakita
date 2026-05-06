@@ -205,6 +205,6 @@ export function getAdm4FromLocation(locationName: string, hints: string[] = []):
     }
   }
 
-  console.log(`[LocationLookup] No match found, using fallback: ${process.env.BMKG_ADM4_CODE || '34.04.13.2001'}`);
-  return process.env.BMKG_ADM4_CODE || '34.04.13.2001'; // Default to Sleman, Yogyakarta
+  console.log('[LocationLookup] No match found');
+  return null;
 }

@@ -26,6 +26,9 @@ app.post('/api/chat', async (req, res) => {
     if (!message) {
       return res.status(400).json({ error: 'Message is required' });
     }
+    if (!location) {
+      return res.status(400).json({ error: 'Location required' });
+    }
 
     const hints = Array.isArray(locationHints) ? locationHints.filter(Boolean) : [];
     const conversationHistory = Array.isArray(history) ? history : [];
@@ -42,6 +45,9 @@ app.post('/api/chat', async (req, res) => {
 app.get('/api/weather', async (req, res) => {
   try {
     const location = typeof req.query.location === 'string' ? req.query.location : undefined;
+    if (!location) {
+      return res.status(400).json({ error: 'Location required' });
+    }
     const hintKeys = ['adm4Hint', 'village', 'district', 'city', 'regency', 'province'];
     const locationHints = hintKeys
       .map((key) => (typeof req.query[key] === 'string' ? String(req.query[key]) : ''))
@@ -57,7 +63,10 @@ app.get('/api/weather', async (req, res) => {
 // POST /api/contribute
 app.post('/api/contribute', async (req, res) => {
   try {
-    res.json(await createContributionResponse(req.body ?? {}));
+    if (!req.body || !req.body.location) {
+      return res.status(400).json({ error: 'Location required' });
+    }
+    res.json(await createContributionResponse(req.body));
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal Server Error' });

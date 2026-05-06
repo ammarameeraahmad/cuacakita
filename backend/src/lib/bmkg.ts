@@ -58,26 +58,26 @@ export type WeatherSnapshot = {
 
 const FALLBACK_SNAPSHOT: WeatherSnapshot = {
   source: 'fallback',
-  locationLabel: 'Desa Sukamaju, 12 Okt',
-  subLabel: 'Senin, 30 Maret 2024',
+  locationLabel: '',
+  subLabel: 'Aktifkan lokasi untuk data cuaca',
   current: {
-    temperature: 28,
-    description: 'Hujan Ringan',
-    humidity: 78,
-    windSpeed: 12,
-    visibility: 8,
-    icon: '🌧️',
+    temperature: 0,
+    description: 'Lokasi belum diaktifkan',
+    humidity: 0,
+    windSpeed: 0,
+    visibility: 0,
+    icon: '📍',
   },
   forecast: [
-    { day: 'SEN', label: 'Senin', description: 'Hujan Ringan', icon: '🌧️', high: 28, low: 23, rainChance: 70 },
-    { day: 'SEL', label: 'Selasa', description: 'Berawan', icon: '⛅', high: 30, low: 24, rainChance: 40 },
-    { day: 'RAB', label: 'Rabu', description: 'Cerah', icon: '☀️', high: 32, low: 25, rainChance: 10 },
-    { day: 'KAM', label: 'Kamis', description: 'Berawan', icon: '⛅', high: 31, low: 24, rainChance: 35 },
-    { day: 'JUM', label: 'Jumat', description: 'Hujan Ringan', icon: '🌧️', high: 29, low: 23, rainChance: 60 },
+    { day: 'SEN', label: 'Senin', description: 'Menunggu lokasi', icon: '📍', high: 0, low: 0, rainChance: 0 },
+    { day: 'SEL', label: 'Selasa', description: 'Menunggu lokasi', icon: '📍', high: 0, low: 0, rainChance: 0 },
+    { day: 'RAB', label: 'Rabu', description: 'Menunggu lokasi', icon: '📍', high: 0, low: 0, rainChance: 0 },
+    { day: 'KAM', label: 'Kamis', description: 'Menunggu lokasi', icon: '📍', high: 0, low: 0, rainChance: 0 },
+    { day: 'JUM', label: 'Jumat', description: 'Menunggu lokasi', icon: '📍', high: 0, low: 0, rainChance: 0 },
   ],
-  temperatureSeries: [28, 30, 32, 31, 29],
-  rainfallSeries: [0, 12, 45, 20, 2],
-  summary: 'Data BMKG belum tersedia, memakai data demo untuk Desa Sukamaju.',
+  temperatureSeries: [0, 0, 0, 0, 0],
+  rainfallSeries: [0, 0, 0, 0, 0],
+  summary: 'Aktifkan lokasi perangkat untuk memuat data cuaca.',
 };
 
 const DAY_NAMES = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
@@ -108,22 +108,22 @@ function rainChanceFromDescription(description: string): number {
   return 25;
 }
 
-function buildFallbackSnapshot(locationLabel?: string): WeatherSnapshot {
+function buildFallbackSnapshot(locationLabel: string): WeatherSnapshot {
   return {
     ...FALLBACK_SNAPSHOT,
-    locationLabel: locationLabel || FALLBACK_SNAPSHOT.locationLabel,
+    locationLabel,
   };
 }
 
 function parseLocationLabel(location: BmkgApiResponse['lokasi'] | undefined, fallbackLabel?: string) {
   if (!location) {
-    return fallbackLabel || FALLBACK_SNAPSHOT.locationLabel;
+    return fallbackLabel || '';
   }
   const parts = [location.desa, location.kecamatan, location.kotkab].filter(Boolean);
   if (parts.length > 0) {
     return parts.join(', ');
   }
-  return fallbackLabel || FALLBACK_SNAPSHOT.locationLabel;
+  return fallbackLabel || '';
 }
 
 function getLocalDatetime(period: RawBmkgForecast) {
@@ -222,11 +222,11 @@ function resolveAdm4Code(locationLabel?: string, locationHints: string[] = []): 
     console.log(`[BMKG] Resolved ADM4 for "${locationLabel || 'unknown'}" -> ${adm4}`);
     return adm4;
   }
-  // Fallback to env var or default
-  return process.env.BMKG_ADM4_CODE || '34.04.13.2001';
+  // No fallback - require location
+  return '';
 }
 
-export async function getWeatherSnapshot(locationLabel?: string, locationHints: string[] = []): Promise<WeatherSnapshot> {
+export async function getWeatherSnapshot(locationLabel: string, locationHints: string[] = []): Promise<WeatherSnapshot> {
   const adm4Code = resolveAdm4Code(locationLabel, locationHints);
   const apiUrl = `https://api.bmkg.go.id/publik/prakiraan-cuaca?adm4=${adm4Code}`;
 
